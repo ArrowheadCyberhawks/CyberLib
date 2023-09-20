@@ -4,6 +4,9 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import com.swervedrivespecialties.swervelib.ModuleConfiguration;
+import com.swervedrivespecialties.swervelib.SdsModuleConfigurations;
+
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -27,9 +30,34 @@ public class SwerveModule {
     private final double absoluteEncoderOffsetRad;
     public final double initPos;
 
+    final ModuleConfiguration moduleConfiguration;
 
-    public SwerveModule(int driveMotorId, int turningMotorId, int absoluteEncoderId, double absoluteEncoderOffset) {
+    static double MAX_VELOCITY_METERS_PER_SECOND;
 
+    public enum ModuleType {
+        MK4_L1,
+        MK4_L2,
+        MK4_L3,
+        MK4_L4
+    }
+
+    public SwerveModule(ModuleType moduleType, int driveMotorId, int turningMotorId, int absoluteEncoderId, double absoluteEncoderOffset, double kPTurning) {
+        switch (moduleType) {
+            case MK4_L1:
+                moduleConfiguration = SdsModuleConfigurations.MK4_L1;
+                break;
+            case MK4_L2:
+                moduleConfiguration = SdsModuleConfigurations.MK4_L2;
+                break;
+            case MK4_L3:
+                moduleConfiguration = SdsModuleConfigurations.MK4_L3;
+                break;
+            case MK4_L4:
+                moduleConfiguration = SdsModuleConfigurations.MK4_L4;
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid moduleType!");
+        }
         this.absoluteEncoderOffsetRad = absoluteEncoderOffset;
         absoluteEncoder = new AnalogInput(absoluteEncoderId);
 
@@ -39,12 +67,14 @@ public class SwerveModule {
         driveEncoder = driveMotor.getEncoder();
         turningEncoder = turningMotor.getEncoder();
 
-        driveEncoder.setPositionConversionFactor(Constants.Swerve.kDriveEncoderRot2Meter);
-        driveEncoder.setVelocityConversionFactor(Constants.Swerve.kDriveEncoderRPM2MeterPerSec);
-        turningEncoder.setPositionConversionFactor(Constants.Swerve.kTurningEncoderRot2Rad);
-        turningEncoder.setVelocityConversionFactor(Constants.Swerve.kTurningEncoderRPM2RadPerSec);
-
-        turningPidController = new PIDController(Constants.Swerve.kPTurning, 0, 0); 
+        driveEncoder.setPositionConversionFactor(moduleConfiguration.getDriveReduction() * Math.PI * moduleConfiguration.getWheelDiameter());
+        driveEncoder.setVelocityConversionFactor(moduleConfiguration.getDriveReduction() * Math.PI * moduleConfiguration.getWheelDiameter() / 60);
+        turningEncoder.setPositionConversionFactor(moduleConfiguration.getSteerReduction() * 2 * Math.PI);
+        turningEncoder.setVelocityConversionFactor(moduleConfiguration.getSteerReduction() * 2 * Math.PI / 60);
+        MAX_VELOCITY_METERS_PER_SECOND = 6380.0 / 60.0
+            * moduleConfiguration.getDriveReduction() * moduleConfiguration.getWheelDiameter()
+            * Math.PI;
+        turningPidController = new PIDController(kPTurning, 0, 0); 
         turningPidController.enableContinuousInput(-Math.PI, Math.PI);
 
         initPos = getAbsoluteEncoderRad();
@@ -96,7 +126,7 @@ public class SwerveModule {
         }
         //state.angle = state.angle.plus(new Rotation2d(absoluteEncoderOffsetRad));
         state = SwerveModuleState.optimize(state, getState().angle);
-        driveMotor.set(state.speedMetersPerSecond / Constants.Swerve.kPhysicalMaxSpeedMetersPerSecond);
+        driveMotor.set(state.speedMetersPerSecond / MAX_VELOCITY_METERS_PER_SECOND);
         turningMotor.set(turningPidController.calculate(getAbsoluteEncoderRad(), state.angle.getRadians()));
 
     }
