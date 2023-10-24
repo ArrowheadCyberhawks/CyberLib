@@ -11,9 +11,15 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+
 import static org.frc706.cyberlib.Constants.SwerveModule.*;
 
 
@@ -35,6 +41,10 @@ public class SwerveModule {
 
     private double absoluteEncoderOffset;
     private double kPTurning, kITurning, kDTurning;
+
+    private final ShuffleboardLayout moduleLayout;
+    private final GenericEntry absoluteEncoderEntry;
+    private final GenericEntry driveEncoderEntry;
 
     public enum ModuleType {
         MK4_L1,
@@ -101,6 +111,11 @@ public class SwerveModule {
         turningPidController.enableContinuousInput(-Math.PI, Math.PI);
 
         resetEncoders();
+
+        moduleLayout = Shuffleboard.getTab("SwerveDrive").getLayout("SwerveModule" + modulePosition.name(), "ListLayout");
+        moduleLayout.add("CAUTION: Reset Absolute Encoder", rezeroCommand()).withWidget(BuiltInWidgets.kCommand);
+        absoluteEncoderEntry = moduleLayout.add("Absolute Encoder Degrees", getAbsoluteTurningAngle().getDegrees()).withWidget(BuiltInWidgets.kGyro).getEntry();
+        driveEncoderEntry = moduleLayout.add("Drive Encoder Meters", driveEncoder).withWidget(BuiltInWidgets.kEncoder).getEntry();
     }
 
     /**
@@ -124,6 +139,14 @@ public class SwerveModule {
     }
 
     /**
+     * Update the absolute encoder and drive encoder entries for this module in NetworkTables.
+     */
+    private void updateNetworkTables() {
+        absoluteEncoderEntry.setDouble(getAbsoluteTurningAngle().getDegrees());
+        driveEncoderEntry.setValue(driveEncoder);
+    }
+
+    /**
      * Returns the absolute angle of the module in radians.
      * @return The absolute encoder angle, CCW positive relative to robot front
      */
@@ -132,6 +155,15 @@ public class SwerveModule {
         angle *= 2.0*Math.PI;
         angle -= absoluteEncoderOffset;
         return new Rotation2d(angle);
+    }
+
+    /**
+     * Resets the absolute encoder reading to zero.
+     * <p>
+     * WARNING: USE WITH CAUTION! This method should only be used when the module is facing forward and ready to zero, previous encoder offset will be erased.
+     */
+    public void rezeroAbsoluteEncoder() {
+        Preferences.setDouble(absEncoderOffsetKey, absoluteEncoder.getVoltage()/RobotController.getVoltage5V() * 2.0 * Math.PI);
     }
 
     /**
@@ -207,6 +239,7 @@ public class SwerveModule {
         state = SwerveModuleState.optimize(state, getState().angle);
         driveMotor.set(state.speedMetersPerSecond / MAX_VELOCITY_METERS_PER_SECOND);
         turningMotor.set(turningPidController.calculate(getAbsoluteTurningAngle().getRadians(), state.angle.getRadians()));
+        updateNetworkTables();
     }
 
     /**
@@ -224,5 +257,13 @@ public class SwerveModule {
     public boolean toggleLocked() {
         isLocked = !isLocked;
         return isLocked;
+    }
+
+    /**
+     * Command to rezero the absolute encoder.
+     * @return InstantCommand to rezero the absolute encoder
+     */
+    public InstantCommand rezeroCommand() {
+        return new InstantCommand(() -> this.rezeroAbsoluteEncoder());
     }
 }
