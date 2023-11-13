@@ -1,4 +1,4 @@
-package org.frc706.cyberlib.subsystems;
+package lib.frc706.cyberlib.subsystems;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -20,11 +20,11 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 
-import static org.frc706.cyberlib.Constants.SwerveModule.*;
+import static lib.frc706.cyberlib.Constants.SwerveModule.*;
 
 
 public class SwerveModule {
-    private final double MAX_VELOCITY_METERS_PER_SECOND;
+    public final double MAX_VELOCITY_METERS_PER_SECOND;
     private final double DRIVE_ROT2METER;
 
     private final CANSparkMax driveMotor;
@@ -38,6 +38,7 @@ public class SwerveModule {
     private final ModulePosition modulePosition;
 
     private boolean isLocked = false;
+    private final boolean absoluteEncoderInverted;
 
     private double absoluteEncoderOffset;
     private double kPTurning, kITurning, kDTurning;
@@ -70,7 +71,8 @@ public class SwerveModule {
         }
     }
 
-    public SwerveModule(ModuleType moduleType, ModulePosition modulePosition, int driveMotorId, int turningMotorId, int absoluteEncoderId) {
+    public SwerveModule(ModuleType moduleType, ModulePosition modulePosition, int driveMotorId, int turningMotorId, int absoluteEncoderId,
+                        double absoluteEncoderOffset, boolean driveMotorInverted, boolean turningMotorInverted, boolean absoluteEncoderInverted) {
         switch (moduleType) {
             case MK4_L1:
                 moduleConfiguration = SdsModuleConfigurations.MK4_L1;
@@ -92,13 +94,18 @@ public class SwerveModule {
         MAX_VELOCITY_METERS_PER_SECOND = 6380.0 / 60.0 * DRIVE_ROT2METER;
 
         this.modulePosition = modulePosition;
+        this.absoluteEncoderInverted = absoluteEncoderInverted;
+        Preferences.setDouble(modulePosition.name() + absEncoderOffsetKey, absoluteEncoderOffset);
         initPreferences();
         loadPreferences();
+        
 
         absoluteEncoder = new AnalogInput(absoluteEncoderId);
 
         driveMotor = new CANSparkMax(driveMotorId, MotorType.kBrushless);
+        driveMotor.setInverted(driveMotorInverted);
         turningMotor = new CANSparkMax(turningMotorId, MotorType.kBrushless);
+        turningMotor.setInverted(turningMotorInverted);
 
         driveEncoder = driveMotor.getEncoder();
         turningEncoder = turningMotor.getEncoder();
@@ -116,6 +123,10 @@ public class SwerveModule {
         moduleLayout.add("CAUTION: Reset Absolute Encoder", rezeroCommand()).withWidget(BuiltInWidgets.kCommand);
         absoluteEncoderEntry = moduleLayout.add("Absolute Encoder Degrees", getAbsoluteTurningAngle().getDegrees()).withWidget(BuiltInWidgets.kGyro).getEntry();
         driveEncoderEntry = moduleLayout.add("Drive Encoder Meters", driveEncoder).withWidget(BuiltInWidgets.kEncoder).getEntry();
+    }
+
+    public SwerveModule(ModuleType moduleType, ModulePosition modulePosition, int driveMotorId, int turningMotorId, int absoluteEncoderId, int absoluteEncoderOffset) {
+        this(moduleType, modulePosition, driveMotorId, turningMotorId, absoluteEncoderId, absoluteEncoderOffset, false, false, false);
     }
 
     /**
@@ -154,6 +165,8 @@ public class SwerveModule {
         double angle = absoluteEncoder.getVoltage()/RobotController.getVoltage5V();
         angle *= 2.0*Math.PI;
         angle -= absoluteEncoderOffset;
+        if(absoluteEncoderInverted)
+            angle *= -1.0;
         return new Rotation2d(angle);
     }
 

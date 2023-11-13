@@ -1,4 +1,4 @@
-package org.frc706.cyberlib;
+package lib.frc706.cyberlib;
 
 public final class Constants {
 	public static final class SwerveModule {
