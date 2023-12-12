@@ -15,6 +15,7 @@ import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
@@ -119,7 +120,7 @@ public class SwerveModule {
 
         resetEncoders();
 
-        moduleLayout = Shuffleboard.getTab("SwerveDrive").getLayout("SwerveModule" + modulePosition.name(), "ListLayout");
+        moduleLayout = Shuffleboard.getTab("SwerveDrive").getLayout("SwerveDrive", BuiltInLayouts.kGrid).getLayout("SwerveModule" + modulePosition.name(), BuiltInLayouts.kList);
         moduleLayout.add("CAUTION: Reset Absolute Encoder", rezeroCommand()).withWidget(BuiltInWidgets.kCommand);
         absoluteEncoderEntry = moduleLayout.add("Absolute Encoder Degrees", getAbsoluteTurningAngle().getDegrees()).withWidget(BuiltInWidgets.kGyro).getEntry();
         driveEncoderEntry = moduleLayout.add("Drive Encoder Meters", driveEncoder).withWidget(BuiltInWidgets.kEncoder).getEntry();

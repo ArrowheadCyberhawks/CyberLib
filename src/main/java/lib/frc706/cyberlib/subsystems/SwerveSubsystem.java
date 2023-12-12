@@ -13,8 +13,10 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RepeatCommand;
@@ -39,7 +41,10 @@ public class SwerveSubsystem extends SubsystemBase {
     private PhotonCameraWrapper[] cameras;
     private final SwerveModule frontLeft, frontRight, backLeft, backRight;
 
+    private final ShuffleboardLayout layout;
+
     public SwerveSubsystem(SwerveModule.ModuleType moduleType, int wheelBase, int[] driveMotorPorts, int[] turningMotorPorts, int[] absoluteEncoderPorts, double[] absoluteEncoderOffsets, boolean driveMotorsInverted[], boolean[] turningMotorsInverted, boolean[] absoluteEncodersInverted, HolonomicPathFollowerConfig pathFollowerConfig, PhotonCameraWrapper... cameras) {
+        layout = Shuffleboard.getTab("SwerveDrive").getLayout("SwerveDrive", BuiltInLayouts.kGrid);
         frontLeft = new SwerveModule(moduleType, SwerveModule.ModulePosition.FL, driveMotorPorts[0], turningMotorPorts[0], absoluteEncoderPorts[0], absoluteEncoderOffsets[0], driveMotorsInverted[0], turningMotorsInverted[0], absoluteEncodersInverted[0]);
         frontRight = new SwerveModule(moduleType, SwerveModule.ModulePosition.FR, driveMotorPorts[1], turningMotorPorts[1], absoluteEncoderPorts[1], absoluteEncoderOffsets[1], driveMotorsInverted[1], turningMotorsInverted[1], absoluteEncodersInverted[1]);
         backLeft = new SwerveModule(moduleType, SwerveModule.ModulePosition.BL, driveMotorPorts[2], turningMotorPorts[2], absoluteEncoderPorts[2], absoluteEncoderOffsets[2], driveMotorsInverted[2], turningMotorsInverted[2], absoluteEncodersInverted[2]);
@@ -54,7 +59,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 new Translation2d(-wheelBase / 2, wheelBase / 2),
                 new Translation2d(-wheelBase / 2, -wheelBase / 2));
         poseEstimator = new SwerveDrivePoseEstimator(kDriveKinematics, getRotation2d(), modulePosition, new Pose2d());
-        SmartDashboard.putData("Field", m_field);
+        layout.add("Field", m_field);
         recenter();
         AutoBuilder.configureHolonomic(
             this::getPose, // Robot pose supplier
@@ -141,13 +146,12 @@ public class SwerveSubsystem extends SubsystemBase {
             }
         }
         m_field.setRobotPose(getPose());
-        SmartDashboard.putNumber("Robot Heading", getHeading());
+        layout.addDouble("Robot Heading", () -> getHeading());
     }
 
     private void updatePositions() {
         for(int i = 0; i < swerveModules.length; i++) {
             modulePosition[i] = swerveModules[i].getPosition();
-            SmartDashboard.putString("Swerve[" + swerveModules[i] + "] state", swerveModules[i].getPosition().toString());
         }
     }
 
