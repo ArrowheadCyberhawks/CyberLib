@@ -43,14 +43,42 @@ public class SwerveSubsystem extends SubsystemBase {
 
     private final ShuffleboardLayout layout;
 
-    public SwerveSubsystem(SwerveModule.ModuleType moduleType, int wheelBase, int[] driveMotorPorts, int[] turningMotorPorts, int[] absoluteEncoderPorts, double[] absoluteEncoderOffsets, boolean driveMotorsInverted[], boolean[] turningMotorsInverted, boolean[] absoluteEncodersInverted, HolonomicPathFollowerConfig pathFollowerConfig, PhotonCameraWrapper... cameras) {
+    public SwerveSubsystem(SwerveModule[] modules, int wheelBase, HolonomicPathFollowerConfig pathFollowerConfig, PhotonCameraWrapper... cameras) {
         layout = Shuffleboard.getTab("SwerveDrive").getLayout("SwerveDrive", BuiltInLayouts.kGrid);
-        frontLeft = new SwerveModule(moduleType, SwerveModule.ModulePosition.FL, driveMotorPorts[0], turningMotorPorts[0], absoluteEncoderPorts[0], absoluteEncoderOffsets[0], driveMotorsInverted[0], turningMotorsInverted[0], absoluteEncodersInverted[0]);
-        frontRight = new SwerveModule(moduleType, SwerveModule.ModulePosition.FR, driveMotorPorts[1], turningMotorPorts[1], absoluteEncoderPorts[1], absoluteEncoderOffsets[1], driveMotorsInverted[1], turningMotorsInverted[1], absoluteEncodersInverted[1]);
-        backLeft = new SwerveModule(moduleType, SwerveModule.ModulePosition.BL, driveMotorPorts[2], turningMotorPorts[2], absoluteEncoderPorts[2], absoluteEncoderOffsets[2], driveMotorsInverted[2], turningMotorsInverted[2], absoluteEncodersInverted[2]);
-        backRight = new SwerveModule(moduleType, SwerveModule.ModulePosition.BR, driveMotorPorts[3], turningMotorPorts[3], absoluteEncoderPorts[3], absoluteEncoderOffsets[3], driveMotorsInverted[3], turningMotorsInverted[3], absoluteEncodersInverted[3]);
-        swerveModules = new SwerveModule[] { frontLeft, frontRight, backLeft, backRight };
+        frontLeft = modules[0];
+        frontRight = modules[1];
+        backLeft = modules[2];
+        backRight = modules[3];
+        swerveModules = modules;
         MAX_VELOCITY_METERS_PER_SECOND = frontLeft.MAX_VELOCITY_METERS_PER_SECOND;
+        updatePositions();
+        this.cameras = cameras;
+        kDriveKinematics = new SwerveDriveKinematics(
+                new Translation2d(wheelBase / 2, wheelBase / 2), // FL,FR,BL,BR
+                new Translation2d(wheelBase / 2, -wheelBase / 2),
+                new Translation2d(-wheelBase / 2, wheelBase / 2),
+                new Translation2d(-wheelBase / 2, -wheelBase / 2));
+        poseEstimator = new SwerveDrivePoseEstimator(kDriveKinematics, getRotation2d(), modulePosition, new Pose2d());
+        layout.add("Field", m_field);
+        recenter();
+        AutoBuilder.configureHolonomic(
+            this::getPose, // Robot pose supplier
+            this::resetOdometry, // Method to reset odometry (will be called if your auto has a starting pose)
+            this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
+            this::driveRobotRelative, // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
+            pathFollowerConfig,
+            this // Reference to this subsystem to set requirements
+        );
+    }
+    
+    public SwerveSubsystem(ModuleType moduleType, int wheelBase, int[] driveMotorIDs, int[] turningMotorIDs, int[] absoluteEncoderPorts, double[] absoluteEncoderOffsets, boolean driveMotorsInverted[], boolean[] turningMotorsInverted, boolean[] absoluteEncodersInverted, HolonomicPathFollowerConfig pathFollowerConfig, PhotonCameraWrapper... cameras) {
+        layout = Shuffleboard.getTab("SwerveDrive").getLayout("SwerveDrive", BuiltInLayouts.kGrid);
+        frontLeft = new SwerveModule(moduleType, SwerveModule.ModulePosition.FL, driveMotorIDs[0], turningMotorIDs[0], absoluteEncoderPorts[0], absoluteEncoderOffsets[0], driveMotorsInverted[0], turningMotorsInverted[0], absoluteEncodersInverted[0]);
+        frontRight = new SwerveModule(moduleType, SwerveModule.ModulePosition.FR, driveMotorIDs[1], turningMotorIDs[1], absoluteEncoderPorts[1], absoluteEncoderOffsets[1], driveMotorsInverted[1], turningMotorsInverted[1], absoluteEncodersInverted[1]);
+        backLeft = new SwerveModule(moduleType, SwerveModule.ModulePosition.BL, driveMotorIDs[2], turningMotorIDs[2], absoluteEncoderPorts[2], absoluteEncoderOffsets[2], driveMotorsInverted[2], turningMotorsInverted[2], absoluteEncodersInverted[2]);
+        backRight = new SwerveModule(moduleType, SwerveModule.ModulePosition.BR, driveMotorIDs[3], turningMotorIDs[3], absoluteEncoderPorts[3], absoluteEncoderOffsets[3], driveMotorsInverted[3], turningMotorsInverted[3], absoluteEncodersInverted[3]);
+        swerveModules = new SwerveModule[] { frontLeft, frontRight, backLeft, backRight };
+        MAX_VELOCITY_METERS_PER_SECOND = moduleType.getMaxVelocity();
         updatePositions();
         this.cameras = cameras;
         kDriveKinematics = new SwerveDriveKinematics(
@@ -175,6 +203,9 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     public Command lockModulesCommand() {
-        return new RepeatCommand(new InstantCommand(() -> toggleModulesLocked())).withTimeout(1).andThen(this::stopModules);
+        return new InstantCommand(() -> toggleModulesLocked())
+                .andThen(() -> this.setModuleStates(getModuleStates()))
+                .withTimeout(1.0)
+                .andThen(this::stopModules);
     }
 }

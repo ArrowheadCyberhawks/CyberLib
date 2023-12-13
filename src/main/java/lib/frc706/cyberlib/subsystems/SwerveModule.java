@@ -4,9 +4,6 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
-import com.swervedrivespecialties.swervelib.ModuleConfiguration;
-import com.swervedrivespecialties.swervelib.SdsModuleConfigurations;
-
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -35,7 +32,6 @@ public class SwerveModule {
     private final PIDController turningPidController;
     private final AnalogInput absoluteEncoder;
 
-    private final ModuleConfiguration moduleConfiguration;
     private final ModulePosition modulePosition;
 
     private boolean isLocked = false;
@@ -47,13 +43,6 @@ public class SwerveModule {
     private final ShuffleboardLayout moduleLayout;
     private final GenericEntry absoluteEncoderEntry;
     private final GenericEntry driveEncoderEntry;
-
-    public enum ModuleType {
-        MK4_L1,
-        MK4_L2,
-        MK4_L3,
-        MK4_L4
-    }
 
     public enum ModulePosition {
         FL (-45.0),
@@ -72,27 +61,11 @@ public class SwerveModule {
         }
     }
 
-    public SwerveModule(ModuleType moduleType, ModulePosition modulePosition, int driveMotorId, int turningMotorId, int absoluteEncoderId,
+    public SwerveModule(ModuleType moduleType, ModulePosition modulePosition, int driveMotorID, int turningMotorID, int absoluteEncoderPort,
                         double absoluteEncoderOffset, boolean driveMotorInverted, boolean turningMotorInverted, boolean absoluteEncoderInverted) {
-        switch (moduleType) {
-            case MK4_L1:
-                moduleConfiguration = SdsModuleConfigurations.MK4_L1;
-                break;
-            case MK4_L2:
-                moduleConfiguration = SdsModuleConfigurations.MK4_L2;
-                break;
-            case MK4_L3:
-                moduleConfiguration = SdsModuleConfigurations.MK4_L3;
-                break;
-            case MK4_L4:
-                moduleConfiguration = SdsModuleConfigurations.MK4_L4;
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid moduleType!");
-        }
 
-        DRIVE_ROT2METER = moduleConfiguration.getDriveReduction() * Math.PI * moduleConfiguration.getWheelDiameter();
-        MAX_VELOCITY_METERS_PER_SECOND = 6380.0 / 60.0 * DRIVE_ROT2METER;
+        DRIVE_ROT2METER = moduleType.getDriveRot2Meter();
+        MAX_VELOCITY_METERS_PER_SECOND = moduleType.getMaxVelocity();
 
         this.modulePosition = modulePosition;
         this.absoluteEncoderInverted = absoluteEncoderInverted;
@@ -101,11 +74,11 @@ public class SwerveModule {
         loadPreferences();
         
 
-        absoluteEncoder = new AnalogInput(absoluteEncoderId);
+        absoluteEncoder = new AnalogInput(absoluteEncoderPort);
 
-        driveMotor = new CANSparkMax(driveMotorId, MotorType.kBrushless);
+        driveMotor = new CANSparkMax(driveMotorID, MotorType.kBrushless);
         driveMotor.setInverted(driveMotorInverted);
-        turningMotor = new CANSparkMax(turningMotorId, MotorType.kBrushless);
+        turningMotor = new CANSparkMax(turningMotorID, MotorType.kBrushless);
         turningMotor.setInverted(turningMotorInverted);
 
         driveEncoder = driveMotor.getEncoder();
@@ -113,21 +86,21 @@ public class SwerveModule {
 
         driveEncoder.setPositionConversionFactor(DRIVE_ROT2METER);
         driveEncoder.setVelocityConversionFactor(DRIVE_ROT2METER / 60);
-        turningEncoder.setPositionConversionFactor(moduleConfiguration.getSteerReduction() * 2 * Math.PI);
-        turningEncoder.setVelocityConversionFactor(moduleConfiguration.getSteerReduction() * 2 * Math.PI / 60);
+        turningEncoder.setPositionConversionFactor(moduleType.getSteerReduction() * 2 * Math.PI);
+        turningEncoder.setVelocityConversionFactor(moduleType.getSteerReduction() * 2 * Math.PI / 60);
         turningPidController = new PIDController(kPTurning, kITurning, kDTurning); 
         turningPidController.enableContinuousInput(-Math.PI, Math.PI);
 
         resetEncoders();
 
         moduleLayout = Shuffleboard.getTab("SwerveDrive").getLayout("SwerveDrive", BuiltInLayouts.kGrid).getLayout("SwerveModule" + modulePosition.name(), BuiltInLayouts.kList);
-        moduleLayout.add("CAUTION: Reset Absolute Encoder", rezeroCommand()).withWidget(BuiltInWidgets.kCommand);
+        moduleLayout.add("CAUTION: Reset Absolute Encoder Offset", rezeroCommand()).withWidget(BuiltInWidgets.kCommand);
         absoluteEncoderEntry = moduleLayout.add("Absolute Encoder Degrees", getAbsoluteTurningAngle().getDegrees()).withWidget(BuiltInWidgets.kGyro).getEntry();
         driveEncoderEntry = moduleLayout.add("Drive Encoder Meters", driveEncoder).withWidget(BuiltInWidgets.kEncoder).getEntry();
     }
 
-    public SwerveModule(ModuleType moduleType, ModulePosition modulePosition, int driveMotorId, int turningMotorId, int absoluteEncoderId, int absoluteEncoderOffset) {
-        this(moduleType, modulePosition, driveMotorId, turningMotorId, absoluteEncoderId, absoluteEncoderOffset, false, false, false);
+    public SwerveModule(ModuleType moduleType, ModulePosition modulePosition, int driveMotorID, int turningMotorID, int absoluteEncoderPort, int absoluteEncoderOffset) {
+        this(moduleType, modulePosition, driveMotorID, turningMotorID, absoluteEncoderPort, absoluteEncoderOffset, false, false, false);
     }
 
     /**
