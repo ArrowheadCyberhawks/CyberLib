@@ -19,7 +19,6 @@ import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.RepeatCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import java.util.Optional;
@@ -43,13 +42,13 @@ public class SwerveSubsystem extends SubsystemBase {
 
     private final ShuffleboardLayout layout;
 
-    public SwerveSubsystem(SwerveModule[] modules, int wheelBase, HolonomicPathFollowerConfig pathFollowerConfig, PhotonCameraWrapper... cameras) {
+    public SwerveSubsystem(SwerveModule moduleFL, SwerveModule moduleFR, SwerveModule moduleBL, SwerveModule moduleBR, int wheelBase, HolonomicPathFollowerConfig pathFollowerConfig, PhotonCameraWrapper... cameras) {
         layout = Shuffleboard.getTab("SwerveDrive").getLayout("SwerveDrive", BuiltInLayouts.kGrid);
-        frontLeft = modules[0];
-        frontRight = modules[1];
-        backLeft = modules[2];
-        backRight = modules[3];
-        swerveModules = modules;
+        frontLeft = moduleFL;
+        frontRight = moduleFR;
+        backLeft = moduleBL;
+        backRight = moduleBR;
+        swerveModules = new SwerveModule[] { frontLeft, frontRight, backLeft, backRight };
         MAX_VELOCITY_METERS_PER_SECOND = frontLeft.MAX_VELOCITY_METERS_PER_SECOND;
         updatePositions();
         this.cameras = cameras;
@@ -71,7 +70,13 @@ public class SwerveSubsystem extends SubsystemBase {
         );
     }
     
-    public SwerveSubsystem(ModuleType moduleType, int wheelBase, int[] driveMotorIDs, int[] turningMotorIDs, int[] absoluteEncoderPorts, double[] absoluteEncoderOffsets, boolean driveMotorsInverted[], boolean[] turningMotorsInverted, boolean[] absoluteEncodersInverted, HolonomicPathFollowerConfig pathFollowerConfig, PhotonCameraWrapper... cameras) {
+    /**
+     * Creates a new SwerveSubsystem with the given parameters.
+     * <p>
+     * All arrays should be in the order FL, FR, BL, BR.
+     * </p>
+     */
+    public SwerveSubsystem(ModuleType moduleType, double wheelBase, int[] driveMotorIDs, int[] turningMotorIDs, int[] absoluteEncoderPorts, double[] absoluteEncoderOffsets, boolean[] driveMotorsInverted, boolean[] turningMotorsInverted, boolean[] absoluteEncodersInverted, HolonomicPathFollowerConfig pathFollowerConfig, PhotonCameraWrapper... cameras) {
         layout = Shuffleboard.getTab("SwerveDrive").getLayout("SwerveDrive", BuiltInLayouts.kGrid);
         frontLeft = new SwerveModule(moduleType, SwerveModule.ModulePosition.FL, driveMotorIDs[0], turningMotorIDs[0], absoluteEncoderPorts[0], absoluteEncoderOffsets[0], driveMotorsInverted[0], turningMotorsInverted[0], absoluteEncodersInverted[0]);
         frontRight = new SwerveModule(moduleType, SwerveModule.ModulePosition.FR, driveMotorIDs[1], turningMotorIDs[1], absoluteEncoderPorts[1], absoluteEncoderOffsets[1], driveMotorsInverted[1], turningMotorsInverted[1], absoluteEncodersInverted[1]);
@@ -119,6 +124,9 @@ public class SwerveSubsystem extends SubsystemBase {
         poseEstimator.resetPosition(getRotation2d(), modulePosition, pose);
     }
 
+    /**
+     * Recenter the robot's position on the field to (0,0) facing forwards.
+     */
     public void recenter() {
         resetOdometry(new Pose2d());
         zeroHeading();
