@@ -1,13 +1,13 @@
 package lib.frc706.cyberlib;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.SparkMaxPIDController;
-import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import com.revrobotics.SparkPIDController;
+import com.revrobotics.CANSparkLowLevel.MotorType;
 
 public class BrushlessSparkWithPID {
 
     public CANSparkMax spark;
-    SparkMaxPIDController PIDController;
+    SparkPIDController PIDController;
     public RelativeEncoder encoder;    
     int sparkID;
     int smartMotionSlot = 0;

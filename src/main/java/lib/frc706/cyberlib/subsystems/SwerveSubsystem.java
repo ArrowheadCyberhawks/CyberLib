@@ -1,5 +1,9 @@
 package lib.frc706.cyberlib.subsystems;
 
+import java.util.Optional;
+
+import org.photonvision.EstimatedRobotPose;
+
 import com.kauailabs.navx.frc.AHRS;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
@@ -21,11 +25,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-import java.util.Optional;
-
-import org.photonvision.EstimatedRobotPose;
-
-public class SwerveSubsystem extends SubsystemBase {
+public class SwerveSubsystem extends SubsystemBase{
     private final double MAX_VELOCITY_METERS_PER_SECOND;
     AHRS gyro = new AHRS(SPI.Port.kMXP);
 
@@ -66,6 +66,7 @@ public class SwerveSubsystem extends SubsystemBase {
             this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
             this::driveRobotRelative, // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
             pathFollowerConfig,
+            this::getFlipPath,
             this // Reference to this subsystem to set requirements
         );
     }
@@ -100,6 +101,7 @@ public class SwerveSubsystem extends SubsystemBase {
             this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
             this::driveRobotRelative, // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
             pathFollowerConfig,
+            this::getFlipPath,
             this // Reference to this subsystem to set requirements
         );
     }
@@ -118,6 +120,10 @@ public class SwerveSubsystem extends SubsystemBase {
 
     public Rotation2d getRotation2d() {
         return gyro.getRotation2d();
+    }
+
+    public boolean getFlipPath() {
+        return false;
     }
 
     public void resetOdometry(Pose2d pose) {
