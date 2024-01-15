@@ -2,9 +2,14 @@ package lib.frc706.cyberlib;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkPIDController;
+import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
 public class BrushlessSparkWithPID {
+
+    
+    public static double NEO550_MAXRPM = 11000.0;
+    public static double NEO1650_MAXRPM = 5676.0;
 
     public CANSparkMax spark;
     SparkPIDController PIDController;
@@ -16,7 +21,7 @@ public class BrushlessSparkWithPID {
     public double motorVel = 0;
     public double positionOffset = 0;
 
-    public BrushlessSparkWithPID(int sparkID, double kP, double kI, double kD, double kFF, double kIz, double kMinOutput, double kMaxOutput, double maxVel, double minVel, double maxAcc, double allowedErr){
+    public BrushlessSparkWithPID(int sparkID,  double kP, double kI, double kD, double kFF, double kIz, double maxVel, double maxAcc, double allowedErr){
         
         this.sparkID = sparkID;
         spark = new CANSparkMax(sparkID, MotorType.kBrushless); //create the spark
@@ -28,23 +33,19 @@ public class BrushlessSparkWithPID {
         PIDController.setD(kD);
         PIDController.setFF(kFF);
         PIDController.setIZone(kIz);
-        PIDController.setOutputRange(kMinOutput, kMaxOutput);
         PIDController.setSmartMotionMaxVelocity(maxVel, smartMotionSlot);//spark ID is used as the smart motion id
-        PIDController.setSmartMotionMinOutputVelocity(minVel, smartMotionSlot);//spark ID is used as the smart motion id
         PIDController.setSmartMotionMaxAccel(maxAcc, smartMotionSlot);//spark ID is used as the smart motion id
         PIDController.setSmartMotionAllowedClosedLoopError(allowedErr, smartMotionSlot);//spark ID is used as the smart motion id
     
     }
 
-    public void updateConstants(double kP, double kI, double kD, double kFF, double kIz, double kMinOutput, double kMaxOutput, double maxVel, double minVel, double maxAcc, double allowedErr){
+    public void updateConstants(double kP, double kI, double kD, double kFF, double kIz, double maxVel, double maxAcc, double allowedErr){
         PIDController.setP(kP);
         PIDController.setI(kI);
         PIDController.setD(kD);
         PIDController.setFF(kFF);
         PIDController.setIZone(kIz);
-        PIDController.setOutputRange(kMinOutput, kMaxOutput);
         PIDController.setSmartMotionMaxVelocity(maxVel, smartMotionSlot);//spark ID is used as the smart motion id
-        PIDController.setSmartMotionMinOutputVelocity(minVel, smartMotionSlot);//spark ID is used as the smart motion id
         PIDController.setSmartMotionMaxAccel(maxAcc, smartMotionSlot);//spark ID is used as the smart motion id
         PIDController.setSmartMotionAllowedClosedLoopError(allowedErr, smartMotionSlot);//spark ID is used as the smart motion id
     }
@@ -64,11 +65,11 @@ public class BrushlessSparkWithPID {
     }
 
     public void setPos(double value){
-        PIDController.setReference(value+positionOffset, CANSparkMax.ControlType.kSmartMotion);//set the position of the spark
+        PIDController.setReference(value+positionOffset, ControlType.kSmartMotion);//set the position of the spark
     }
 
     public void setVel(double value){
-        PIDController.setReference(value, CANSparkMax.ControlType.kSmartVelocity);//set the velocity of the spark
+        PIDController.setReference(value, ControlType.kSmartVelocity);//set the velocity of the spark
     }
 
     public double getRawOutput(){
