@@ -69,7 +69,7 @@ public class SwerveModule {
 
         this.modulePosition = modulePosition;
         this.absoluteEncoderInverted = absoluteEncoderInverted;
-        Preferences.setDouble(modulePosition.name() + absEncoderOffsetKey, absoluteEncoderOffset);
+        Preferences.setDouble(modulePosition.toString() + absEncoderOffsetKey, absoluteEncoderOffset);
         initPreferences();
         loadPreferences();
         
@@ -93,10 +93,10 @@ public class SwerveModule {
 
         resetEncoders();
 
-        moduleLayout = Shuffleboard.getTab("SwerveDrive").getLayout("SwerveDrive", BuiltInLayouts.kGrid).getLayout("SwerveModule" + modulePosition.name(), BuiltInLayouts.kList);
+        moduleLayout = Shuffleboard.getTab("SwerveDrive").getLayout("SwerveDrive", BuiltInLayouts.kGrid).getLayout("SwerveModule" + modulePosition.toString(), BuiltInLayouts.kList);
         moduleLayout.add("CAUTION: Reset Absolute Encoder Offset", rezeroCommand()).withWidget(BuiltInWidgets.kCommand);
         absoluteEncoderEntry = moduleLayout.add("Absolute Encoder Degrees", getAbsoluteTurningAngle().getDegrees()).withWidget(BuiltInWidgets.kGyro).getEntry();
-        driveEncoderEntry = moduleLayout.add("Drive Encoder Meters", driveEncoder).withWidget(BuiltInWidgets.kEncoder).getEntry();
+        driveEncoderEntry = moduleLayout.add("Drive Encoder Meters", driveEncoder.getPosition()).withWidget(BuiltInWidgets.kEncoder).getEntry();
     }
 
     public SwerveModule(ModuleType moduleType, ModulePosition modulePosition, int driveMotorID, int turningMotorID, int absoluteEncoderPort, int absoluteEncoderOffset) {

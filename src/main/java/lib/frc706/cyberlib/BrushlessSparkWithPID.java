@@ -4,6 +4,7 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkPIDController;
 import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkLowLevel.MotorType;
+import static lib.frc706.cyberlib.Constants.SparkPID.*;
 
 public class BrushlessSparkWithPID {
 
@@ -21,6 +22,38 @@ public class BrushlessSparkWithPID {
     public double motorVel = 0;
     public double positionOffset = 0;
 
+    /**
+     * Creates a new BrushlessSparkWithPID for simple control of a brushless motor
+     * @param sparkID can id of the spark
+     */
+    public BrushlessSparkWithPID(int sparkID) {
+        this.sparkID = sparkID;
+        spark = new CANSparkMax(sparkID, MotorType.kBrushless); //create the spark
+        spark.restoreFactoryDefaults();
+        PIDController = spark.getPIDController();         //initializing PID controller on Spark1(for sending inputs)
+        encoder = spark.getEncoder();                     //initializing Encoder on Spark1(to get state of spark1)
+        PIDController.setI(defaultkI);
+        PIDController.setD(defaultkD);
+        PIDController.setP(defaultkP);
+        PIDController.setFF(defaultkFF);
+        PIDController.setIZone(defaultkIz);
+        PIDController.setSmartMotionMaxVelocity(NEO1650_MAXRPM, smartMotionSlot);//spark ID is used as the smart motion id
+        PIDController.setSmartMotionMaxAccel(NEO1650_MAXRPM, smartMotionSlot);//spark ID is used as the smart motion id
+        PIDController.setSmartMotionAllowedClosedLoopError(0, smartMotionSlot);//spark ID is used as the smart motion id
+    }
+    
+    /**
+     * Creates a new BrushlessSparkWithPID for control of a brushless motor with PID with specified constants
+     * @param sparkID can id of the spark
+     * @param kP proportional constant
+     * @param kI integral constant
+     * @param kD derivative constant
+     * @param kFF feed forward constant
+     * @param kIz integral zone
+     * @param maxVel max velocity of the motor in RPM
+     * @param maxAcc max acceleration of the motor in RPM per second
+     * @param allowedErr allowed error of the motor in rotations
+     */
     public BrushlessSparkWithPID(int sparkID,  double kP, double kI, double kD, double kFF, double kIz, double maxVel, double maxAcc, double allowedErr){
         
         this.sparkID = sparkID;

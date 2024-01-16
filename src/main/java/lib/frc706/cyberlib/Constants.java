@@ -12,4 +12,12 @@ public final class Constants {
 		public static final double defaultkITurning = 0.0;
 		public static final double defaultkDTurning = 0.1;
 	}
+
+	public static final class SparkPID {
+		public static final double defaultkP = 1.0;
+		public static final double defaultkI = 0.0;
+		public static final double defaultkD = 0.0;
+		public static final double defaultkFF = 1.0;
+		public static final double defaultkIz = 0.0;
+	}
 }

@@ -62,6 +62,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 new Translation2d(-wheelBase / 2, -wheelBase / 2));
         poseEstimator = new SwerveDrivePoseEstimator(kDriveKinematics, getRotation2d(), modulePosition, new Pose2d());
         layout.add("Field", m_field);
+        layout.addDouble("Robot Heading", () -> getHeading());
         recenter();
         AutoBuilder.configureHolonomic(
                 this::getPose, // Robot pose supplier
@@ -72,6 +73,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 this::getFlipPath,
                 this // Reference to this subsystem to set requirements
         );
+        setName("SwerveSubsystem");
     }
 
     /**
@@ -215,7 +217,6 @@ public class SwerveSubsystem extends SubsystemBase {
             }
         }
         m_field.setRobotPose(getPose());
-        layout.addDouble("Robot Heading", () -> getHeading());
     }
 
     private void updatePositions() {
