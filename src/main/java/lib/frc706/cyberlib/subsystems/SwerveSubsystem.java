@@ -163,6 +163,10 @@ public class SwerveSubsystem extends SubsystemBase {
         zeroHeading();
     }
 
+    /**
+     * Get the robot's current pose on the field.
+     * @return the robot's current pose
+     */
     public Pose2d getPose() {
         return poseEstimator.getEstimatedPosition();
     }

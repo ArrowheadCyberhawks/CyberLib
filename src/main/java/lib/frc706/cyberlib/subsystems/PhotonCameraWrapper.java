@@ -31,10 +31,12 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj.DriverStation;
 import java.io.UncheckedIOException;
 import java.util.Optional;
+import java.util.List;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class PhotonCameraWrapper {
 	private PhotonCamera photonCamera;
@@ -60,7 +62,7 @@ public class PhotonCameraWrapper {
 	}
 
 	/**
-	 * @param estimatedRobotPose The current best guess at robot pose
+	 * @param prevEstimatedRobotPose The current best guess at robot pose
 	 * @return an EstimatedRobotPose with an estimated pose, the timestamp, and
 	 *         targets used to create the estimate
 	 */
@@ -71,5 +73,9 @@ public class PhotonCameraWrapper {
 		}
 		photonPoseEstimator.setReferencePose(prevEstimatedRobotPose);
 		return photonPoseEstimator.update();
+	}
+
+	public List<PhotonTrackedTarget> getTags() {
+		return photonCamera.getLatestResult().getTargets();
 	}
 }
