@@ -130,8 +130,22 @@ public class SwerveSubsystem extends SubsystemBase {
         gyro.reset();
     }
 
+    /**
+     * Get the heading of the robot.
+     * 
+     * @return the robot's heading in degrees, from 0 to 360
+     */
     public double getHeading() {
         return Math.IEEEremainder(gyro.getAngle(), 360);
+    }
+
+    /**
+     * Get the rate of turn around the Z axis(yaw).
+     * 
+     * @return the rate of turn in degrees per second
+     */
+    public double getTurnRate() {
+        return gyro.getRate();
     }
 
     public Rotation2d getRotation2d() {
@@ -140,7 +154,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
     public boolean getFlipPath() {
         Optional<Alliance> ally = DriverStation.getAlliance();
-        if (ally.isPresent()) { //check if alliance is red or blue
+        if (ally.isPresent()) { // check if alliance is red or blue
             if (ally.get() == Alliance.Red) {
                 return true;
             }
@@ -148,7 +162,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 return false;
             }
         }
-        return false; //if we don't know then just give up and say no
+        return false; // if we don't know then just give up and say no
     }
 
     public void resetOdometry(Pose2d pose) {
@@ -165,6 +179,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
     /**
      * Get the robot's current pose on the field.
+     * 
      * @return the robot's current pose
      */
     public Pose2d getPose() {
@@ -173,10 +188,10 @@ public class SwerveSubsystem extends SubsystemBase {
 
     public SwerveModuleState[] getModuleStates() {
         return new SwerveModuleState[] {
-                frontLeft.getState(),
-                frontRight.getState(),
-                backLeft.getState(),
-                backRight.getState()
+            frontLeft.getState(),
+            frontRight.getState(),
+            backLeft.getState(),
+            backRight.getState()
         };
     }
 
@@ -187,9 +202,11 @@ public class SwerveSubsystem extends SubsystemBase {
     /**
      * move the robot
      * 
-     * @param xSpeed        forwards speed, positive is away from our alliance wall
-     * @param ySpeed        sideways speed, positive is left
-     * @param rot           rotation speed, positive is counterclockwise
+     * @param xSpeed        forwards speed in meters per second, positive is away
+     *                      from our alliance wall
+     * @param ySpeed        sideways speed in meters per second, positive is left
+     * @param rot           rotation speed in radians per second, positive is
+     *                      counterclockwise
      * @param fieldRelative whether the xSpeed and ySpeed are relative to the field
      */
     public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {

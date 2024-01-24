@@ -116,4 +116,9 @@ public class BrushlessSparkWithPID {
     public void rezero(double currentPos){
         positionOffset = encoder.getPosition()-currentPos;
     }
+
+    public void setConversionFactors(double positionConversionFactor, double velocityConversionFactor){
+        encoder.setPositionConversionFactor(positionConversionFactor);
+        encoder.setVelocityConversionFactor(velocityConversionFactor);
+    }
 }
