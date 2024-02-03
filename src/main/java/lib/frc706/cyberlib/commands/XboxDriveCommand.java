@@ -4,10 +4,10 @@ import lib.frc706.cyberlib.subsystems.SwerveSubsystem;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.SlewRateLimiter;
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
-public class XboxDriveCommand extends CommandBase{
+public class XboxDriveCommand extends Command{
 	private final CommandXboxController controller;
 	private final SwerveSubsystem swerveSubsystem;
 	private double kMaxVelTele, kDeadband, kMaxAngularVelTele;
