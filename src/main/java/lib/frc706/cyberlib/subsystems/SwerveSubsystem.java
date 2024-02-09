@@ -14,6 +14,7 @@ import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -51,7 +52,8 @@ public class SwerveSubsystem extends SubsystemBase {
         swerveDrive.setHeadingCorrection(false);
         AutoBuilder.configureHolonomic(
                 this::getPose, // Robot pose supplier
-                this.swerveDrive::resetOdometry, // Method to reset odometry (will be called if your auto has a starting pose)
+                this.swerveDrive::resetOdometry, // Method to reset odometry (will be called if your auto has a starting
+                                                 // pose)
                 this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
                 this::driveRobotRelative, // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
                 pathFollowerConfig,
@@ -84,6 +86,7 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     public void zeroHeading() {
+        ((AHRS) swerveDrive.getGyro().getIMU()).zeroYaw();
         swerveDrive.zeroGyro();
     }
 
@@ -225,7 +228,11 @@ public class SwerveSubsystem extends SubsystemBase {
      * @param velocity Velocity according to the robot.
      */
     public void driveFieldOriented(ChassisSpeeds velocity) {
-        swerveDrive.driveFieldOriented(velocity);
+        swerveDrive.drive(ChassisSpeeds.fromFieldRelativeSpeeds(
+                velocity, 
+                Rotation2d.fromDegrees(-((AHRS) swerveDrive.getGyro().getIMU()).getAngle())),// get heading directly from the IMU and invert to make CCW+
+                 true,
+                new Translation2d());
     }
 
     @Override
@@ -249,7 +256,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
     public Command lockModulesCommand() {
         return new InstantCommand(() -> toggleModulesLocked())
-                .andThen(() -> swerveDrive.setModuleStates(getModuleStates(),false))
+                .andThen(() -> swerveDrive.setModuleStates(getModuleStates(), false))
                 .withTimeout(1.0)
                 .andThen(this::stopModules);
     }
