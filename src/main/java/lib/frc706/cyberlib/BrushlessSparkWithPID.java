@@ -14,7 +14,6 @@ public class BrushlessSparkWithPID {
     public CANSparkMax spark;
     SparkPIDController PIDController;
     public RelativeEncoder encoder;    
-    private int sparkID;
     private int smartMotionSlot = 0;
     private int pidSlot = 0;
 
@@ -27,7 +26,6 @@ public class BrushlessSparkWithPID {
      * @param sparkID can id of the spark
      */
     public BrushlessSparkWithPID(int sparkID) {
-        this.sparkID = sparkID;
         spark = new CANSparkMax(sparkID, MotorType.kBrushless); //create the spark
         PIDController = spark.getPIDController();         //initializing PID controller on Spark1(for sending inputs)
         encoder = spark.getEncoder();
@@ -47,7 +45,6 @@ public class BrushlessSparkWithPID {
      */
     public BrushlessSparkWithPID(int sparkID,  double kP, double kI, double kD, double kFF, double kIz, double maxVel, double maxAcc, double allowedErr){
         
-        this.sparkID = sparkID;
         spark = new CANSparkMax(sparkID, MotorType.kBrushless); //create the spark
         spark.restoreFactoryDefaults();
         PIDController = spark.getPIDController();         //initializing PID controller on Spark1(for sending inputs)
