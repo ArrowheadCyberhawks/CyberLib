@@ -40,7 +40,7 @@ public class SwerveSubsystem extends SubsystemBase {
     public SwerveSubsystem(File configDir, double maxVel, HolonomicPathFollowerConfig pathFollowerConfig,
             PhotonCameraWrapper... cameras) {
         layout = Shuffleboard.getTab("SwerveDrive").getLayout("SwerveDrive", BuiltInLayouts.kGrid);
-        SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
+        //SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
         try {
             swerveDrive = new SwerveParser(configDir).createSwerveDrive(maxVel);
         } catch (IOException e) {
