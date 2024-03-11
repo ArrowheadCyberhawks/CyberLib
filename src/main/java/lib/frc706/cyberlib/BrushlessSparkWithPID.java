@@ -92,7 +92,6 @@ public class BrushlessSparkWithPID {
 
     public void setPos(double value){
         PIDController.setReference(value+positionOffset, ControlType.kPosition, pidSlot);//set the position of the spark
-        System.out.println(value+positionOffset + " " + pidSlot);
     }
 
     public void setVel(double value){
