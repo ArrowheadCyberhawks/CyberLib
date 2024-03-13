@@ -55,7 +55,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 this.swerveDrive::resetOdometry, // Method to reset odometry (will be called if your auto has a starting
                                                  // pose)
                 this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
-                this::driveRobotRelative, // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
+                this::driveRobotOriented, // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
                 pathFollowerConfig,
                 this::getFlipPath,
                 this // Reference to this subsystem to set requirements
@@ -209,7 +209,7 @@ public class SwerveSubsystem extends SubsystemBase {
      *
      * @param velocity Robot oriented {@link ChassisSpeeds}
      */
-    public void driveRobotRelative(ChassisSpeeds velocity) {
+    public void driveRobotOriented(ChassisSpeeds velocity) {
         swerveDrive.drive(velocity);
     }
 
@@ -221,6 +221,7 @@ public class SwerveSubsystem extends SubsystemBase {
     public SwerveDriveKinematics getKinematics() {
         return swerveDrive.kinematics;
     }
+
 
     /**
      * Drive the robot given a chassis field oriented velocity.
