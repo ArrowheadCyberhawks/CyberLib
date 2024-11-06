@@ -2,6 +2,8 @@ package lib.frc706.cyberlib.commands;
 
 import lib.frc706.cyberlib.subsystems.SwerveSubsystem;
 
+import java.util.function.Supplier;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -12,11 +14,11 @@ public class XboxDriveCommand extends Command{
 	private final SwerveSubsystem swerveSubsystem;
 	private double kMaxVelTele, kDeadband, kMaxAngularVelTele;
     private final SlewRateLimiter xLimiter, yLimiter, turnLimiter;
-
-	public XboxDriveCommand(CommandXboxController controller, SwerveSubsystem swerveSubsystem, double kDeadband, double kMaxVelTele, double kMaxAccelTele, double kMaxAngularVelTele, double kMaxAngularAccelTele) {
+	private final Supplier<Boolean> fieldSupplier;
+	public XboxDriveCommand(CommandXboxController controller, SwerveSubsystem swerveSubsystem, Supplier<Boolean> fieldOriented, double kDeadband, double kMaxVelTele, double kMaxAccelTele, double kMaxAngularVelTele, double kMaxAngularAccelTele) {
         this.controller = controller;
 		this.swerveSubsystem = swerveSubsystem;
-		
+		this.fieldSupplier = fieldOriented;
         this.xLimiter = new SlewRateLimiter(kMaxAccelTele);
         this.yLimiter = new SlewRateLimiter(kMaxAccelTele);
         this.turnLimiter = new SlewRateLimiter(kMaxAngularAccelTele);
@@ -28,9 +30,9 @@ public class XboxDriveCommand extends Command{
 
 	@Override
 	public void execute() {
-		double x = -controller.getLeftY();
-		double y = -controller.getLeftX();
-		double rot = -controller.getRightX();
+		double x = -controller.getLeftY(); //invert because up is negative for some reason
+		double y = -controller.getLeftX(); //invert because FOC left is +y, controller right is +y
+		double rot = -controller.getRightX(); //invert because FOC CCW is +rot, controller right is +
 		double accelMultiplier = controller.getRightTriggerAxis();
 		x = MathUtil.applyDeadband(x, kDeadband);
         y = MathUtil.applyDeadband(y, kDeadband);
@@ -40,11 +42,14 @@ public class XboxDriveCommand extends Command{
 		rot = Math.copySign(rot * rot, rot);
 		x *= MathUtil.interpolate(0.15, 1, accelMultiplier);
 		y *= MathUtil.interpolate(0.15, 1, accelMultiplier);
-		rot *= MathUtil.interpolate(0.25, 1, accelMultiplier);
+		rot *= MathUtil.interpolate(0.20, 1, accelMultiplier);
         x = xLimiter.calculate(x * kMaxVelTele);
         y = yLimiter.calculate(y * kMaxVelTele);
         rot = turnLimiter.calculate(rot * kMaxAngularVelTele);
-		swerveSubsystem.drive(x, y, rot, true);
+		if(fieldSupplier.get())
+			swerveSubsystem.driveFieldOriented(swerveSubsystem.swerveDrive.swerveController.getRawTargetSpeeds(x, y, rot));
+		else
+			swerveSubsystem.driveRobotOriented(swerveSubsystem.swerveDrive.swerveController.getRawTargetSpeeds(x, y, rot));
 	}
 
 	@Override

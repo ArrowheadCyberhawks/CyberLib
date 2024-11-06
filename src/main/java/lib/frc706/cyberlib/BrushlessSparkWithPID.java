@@ -4,7 +4,6 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkPIDController;
 import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkLowLevel.MotorType;
-import static lib.frc706.cyberlib.Constants.SparkPID.*;
 
 public class BrushlessSparkWithPID {
 
@@ -15,31 +14,21 @@ public class BrushlessSparkWithPID {
     public CANSparkMax spark;
     SparkPIDController PIDController;
     public RelativeEncoder encoder;    
-    int sparkID;
-    int smartMotionSlot = 0;
+    private int smartMotionSlot = 0;
+    private int pidSlot = 0;
 
-    public double motorPos = 0;
-    public double motorVel = 0;
-    public double positionOffset = 0;
+    private double motorPos = 0;
+    private double motorVel = 0;
+    private double positionOffset = 0;
 
     /**
      * Creates a new BrushlessSparkWithPID for simple control of a brushless motor
      * @param sparkID can id of the spark
      */
     public BrushlessSparkWithPID(int sparkID) {
-        this.sparkID = sparkID;
         spark = new CANSparkMax(sparkID, MotorType.kBrushless); //create the spark
-        spark.restoreFactoryDefaults();
         PIDController = spark.getPIDController();         //initializing PID controller on Spark1(for sending inputs)
-        encoder = spark.getEncoder();                     //initializing Encoder on Spark1(to get state of spark1)
-        PIDController.setI(defaultkI);
-        PIDController.setD(defaultkD);
-        PIDController.setP(defaultkP);
-        PIDController.setFF(defaultkFF);
-        PIDController.setIZone(defaultkIz);
-        PIDController.setSmartMotionMaxVelocity(NEO1650_MAXRPM, smartMotionSlot);//spark ID is used as the smart motion id
-        PIDController.setSmartMotionMaxAccel(NEO1650_MAXRPM, smartMotionSlot);//spark ID is used as the smart motion id
-        PIDController.setSmartMotionAllowedClosedLoopError(0, smartMotionSlot);//spark ID is used as the smart motion id
+        encoder = spark.getEncoder();
     }
     
     /**
@@ -56,7 +45,6 @@ public class BrushlessSparkWithPID {
      */
     public BrushlessSparkWithPID(int sparkID,  double kP, double kI, double kD, double kFF, double kIz, double maxVel, double maxAcc, double allowedErr){
         
-        this.sparkID = sparkID;
         spark = new CANSparkMax(sparkID, MotorType.kBrushless); //create the spark
         spark.restoreFactoryDefaults();
         PIDController = spark.getPIDController();         //initializing PID controller on Spark1(for sending inputs)
@@ -88,7 +76,12 @@ public class BrushlessSparkWithPID {
         motorVel = encoder.getVelocity();
     }
 
-    public double getPos(){
+    public double getVelocity() {
+        updateSensorValues();
+        return motorVel;
+    }
+
+    public double getPosition(){
         updateSensorValues();
         return motorPos;
     }
@@ -98,11 +91,15 @@ public class BrushlessSparkWithPID {
     }
 
     public void setPos(double value){
-        PIDController.setReference(value+positionOffset, ControlType.kSmartMotion);//set the position of the spark
+        PIDController.setReference(value+positionOffset, ControlType.kPosition, pidSlot);//set the position of the spark
     }
 
     public void setVel(double value){
-        PIDController.setReference(value, ControlType.kSmartVelocity);//set the velocity of the spark
+        PIDController.setReference(value, ControlType.kVelocity, pidSlot);//set the velocity of the spark
+    }
+
+    public void setPIDSlot(int slot) {
+        this.pidSlot = slot;
     }
 
     public double getRawOutput(){
