@@ -11,6 +11,8 @@ import com.kauailabs.navx.frc.AHRS;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
+import com.pathplanner.lib.util.PIDConstants;
+import com.pathplanner.lib.util.ReplanningConfig;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -29,8 +31,6 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import swervelib.SwerveDrive;
 import swervelib.parser.SwerveParser;
-import swervelib.telemetry.SwerveDriveTelemetry;
-import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 
 public class SwerveSubsystem extends SubsystemBase {
     public final SwerveDrive swerveDrive;
@@ -50,7 +50,7 @@ public class SwerveSubsystem extends SubsystemBase {
         layout.addDouble("Robot Heading", () -> getHeading());
         recenter();
         swerveDrive.setHeadingCorrection(false);
-        AutoBuilder.configureHolonomic(
+        /*AutoBuilder.configureHolonomic(
                 this::getPose, // Robot pose supplier
                 this.swerveDrive::resetOdometry, // Method to reset odometry (will be called if your auto has a starting
                                                  // pose)
@@ -59,8 +59,9 @@ public class SwerveSubsystem extends SubsystemBase {
                 pathFollowerConfig,
                 this::getFlipPath,
                 this // Reference to this subsystem to set requirements
-        );
+        );*/
         setName("SwerveSubsystem");
+        configurePathPlanner();
     }
 
     /**
@@ -261,4 +262,30 @@ public class SwerveSubsystem extends SubsystemBase {
                 .withTimeout(1.0)
                 .andThen(this::stopModules);
     }
+
+    public void configurePathPlanner() {
+        AutoBuilder.configureHolonomic(
+                this::getPose, // Robot pose supplier
+                this::resetOdometry, // Method to reset odometry (will be called if your auto has a starting pose)
+                this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
+                this::driveRobotOriented, // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
+                new HolonomicPathFollowerConfig( // HolonomicPathFollowerConfig, this should likely live in your Constants class
+                    new PIDConstants(2.5, 0, 0), // Translation PID constants  2,0,0
+                    new PIDConstants(0.2, 0, 0), // Rotation PID constants
+                    5, // Max module speed, in m/s
+                    Units.inchesToMeters(13.5), // Drive base radius in meters. Distance from robot center to furthest module.
+                    new ReplanningConfig() // Default path replanning config. See the API for the options here
+                ),
+                () -> {
+                    // Boolean supplier that controls when the path will be mirrored for the red
+                    // alliance
+                    // This will flip the path being followed to the red side of the field.
+                    // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
+                    var alliance = DriverStation.getAlliance();
+                    return alliance.isPresent() ? alliance.get() == DriverStation.Alliance.Red : false;
+                },
+                this // Reference to this subsystem to set requirements
+        );
+    }
+
 }
