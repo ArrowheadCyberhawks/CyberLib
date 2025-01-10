@@ -50,9 +50,9 @@ public class PhotonCameraWrapper {
 			// on the field.
 			AprilTagFieldLayout fieldLayout = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
 			// Create pose estimator
-			photonPoseEstimator = new PhotonPoseEstimator(
-					fieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, photonCamera, robotToCam);
+			photonPoseEstimator = new PhotonPoseEstimator(fieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, robotToCam);
 			photonPoseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
+			
 		} catch (UncheckedIOException e) {
 			// The AprilTagFieldLayout failed to load. We won't be able to estimate poses if
 			// we don't know where the tags are.
@@ -72,7 +72,7 @@ public class PhotonCameraWrapper {
 			return Optional.empty();
 		}
 		photonPoseEstimator.setReferencePose(prevEstimatedRobotPose);
-		return photonPoseEstimator.update();
+		return photonPoseEstimator.update(photonCamera.getLatestResult());
 	}
 
 	public List<PhotonTrackedTarget> getTags() {
