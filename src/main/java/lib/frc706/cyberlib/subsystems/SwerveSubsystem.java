@@ -8,7 +8,6 @@ import java.util.function.DoubleSupplier;
 
 import org.photonvision.EstimatedRobotPose;
 
-import com.kauailabs.navx.frc.AHRS;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.PIDConstants;
@@ -106,7 +105,7 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     public void zeroHeading() {
-        ((AHRS) swerveDrive.getGyro().getIMU()).zeroYaw();
+        // ((com.studica.frc.AHRS) swerveDrive.getGyro().getIMU()).zeroYaw();
         swerveDrive.zeroGyro();
     }
 
@@ -117,6 +116,7 @@ public class SwerveSubsystem extends SubsystemBase {
      */
     public double getHeading() {
         return Math.IEEEremainder(swerveDrive.getOdometryHeading().getDegrees(), 360);
+        // TODO: why are we doing this?
     }
 
     /**
@@ -125,7 +125,7 @@ public class SwerveSubsystem extends SubsystemBase {
      * @return the rate of turn in degrees per second
      */
     public double getTurnRate() {
-        return ((AHRS) swerveDrive.getGyro().getIMU()).getRate();
+        return swerveDrive.getGyro().getYawAngularVelocity().in(DegreesPerSecond);
     }
 
     public Rotation2d getRotation2d() {
@@ -191,8 +191,8 @@ public class SwerveSubsystem extends SubsystemBase {
         // swerveDrive.setHeadingCorrection(true); // Normally you would want heading
         // correction for this kind of control.
         return run(() -> {
-            double xInput = Math.pow(translationX.getAsDouble(), 3); // Smooth controll out
-            double yInput = Math.pow(translationY.getAsDouble(), 3); // Smooth controll out
+            double xInput = Math.pow(translationX.getAsDouble(), 3); // Smooth control out
+            double yInput = Math.pow(translationY.getAsDouble(), 3); // Smooth control out
             // Make the robot move
             driveFieldOriented(swerveDrive.swerveController.getTargetSpeeds(xInput, yInput,
                     headingX.getAsDouble(),
@@ -250,8 +250,9 @@ public class SwerveSubsystem extends SubsystemBase {
      */
     public void driveFieldOriented(ChassisSpeeds velocity) {
         swerveDrive.drive(ChassisSpeeds.fromFieldRelativeSpeeds(
-                velocity, 
-                Rotation2d.fromDegrees(-((AHRS) swerveDrive.getGyro().getIMU()).getAngle())),// get heading directly from the IMU and invert to make CCW+
+                velocity,
+                swerveDrive.getOdometryHeading()),
+                // Rotation2d.fromDegrees(-((com.studica.frc.AHRS) swerveDrive.getGyro().getIMU()).getAngle())),// get heading directly from the IMU and invert to make CCW+
                  true,
                 new Translation2d());
     }
