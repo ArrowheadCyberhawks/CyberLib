@@ -1,5 +1,6 @@
 package lib.frc706.cyberlib.subsystems;
 
+import static edu.wpi.first.units.Units.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
@@ -9,10 +10,11 @@ import org.photonvision.EstimatedRobotPose;
 
 import com.kauailabs.navx.frc.AHRS;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.ModuleConfig;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
-import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
-import com.pathplanner.lib.util.PIDConstants;
-import com.pathplanner.lib.util.ReplanningConfig;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -21,6 +23,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.MomentOfInertia;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
@@ -36,9 +39,20 @@ public class SwerveSubsystem extends SubsystemBase {
     public final SwerveDrive swerveDrive;
     private final ShuffleboardLayout layout;
     private final PhotonCameraWrapper[] cameras;
+    private RobotConfig config;
+    private PIDConstants translationConstants = new PIDConstants(2.5, 0, 0); //this is only here because YAGSL won't give us the one from the JSON file
 
-    public SwerveSubsystem(File configDir, double maxVel, HolonomicPathFollowerConfig pathFollowerConfig,
-            PhotonCameraWrapper... cameras) {
+    /**
+     * Constructs a new SwerveSubsystem.
+     *
+     * @param configDir The directory containing the configuration files.
+     * @param maxVel The maximum chassis velocity of the swerve drive in m/s.
+     * @param translationConstants The PID constants for translation control.
+     * @param cameras The PhotonCameraWrapper objects for vision processing.
+     * 
+     * @throws RuntimeException if the swerve drive creation fails.
+     */
+    public SwerveSubsystem(File configDir, double maxVel, PIDConstants translationConstants, PhotonCameraWrapper... cameras) {
         layout = Shuffleboard.getTab("SwerveDrive").getLayout("SwerveDrive", BuiltInLayouts.kGrid);
         //SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
         try {
@@ -47,19 +61,26 @@ public class SwerveSubsystem extends SubsystemBase {
             throw new RuntimeException("Failed to create swerve drive", e);
         }
         this.cameras = cameras;
+        this.translationConstants = translationConstants;
         layout.addDouble("Robot Heading", () -> getHeading());
         recenter();
+        try {
+            this.config = RobotConfig.fromGUISettings();
+        } catch (Exception e) {
+            e.printStackTrace();
+            this.config = new RobotConfig(Kilograms.of(swerveDrive.swerveDriveConfiguration.physicalCharacteristics.robotMassKg),
+                MomentOfInertia.ofRelativeUnits(swerveDrive.swerveDriveConfiguration.physicalCharacteristics.steerRotationalInertia, KilogramSquareMeters),
+                new ModuleConfig(Meters.of(swerveDrive.swerveDriveConfiguration.getDriveBaseRadiusMeters()),
+                swerveDrive.getMaximumModuleDriveVelocity(),
+                swerveDrive.swerveDriveConfiguration.modules[0].configuration.physicalCharacteristics.wheelGripCoefficientOfFriction,
+                swerveDrive.swerveDriveConfiguration.getDriveMotorSim(),
+                Amps.of(swerveDrive.swerveDriveConfiguration.modules[0].configuration.physicalCharacteristics.driveMotorCurrentLimit),
+                1),
+                swerveDrive.swerveDriveConfiguration.moduleLocationsMeters
+            );
+        }
+        
         swerveDrive.setHeadingCorrection(false);
-        /*AutoBuilder.configureHolonomic(
-                this::getPose, // Robot pose supplier
-                this.swerveDrive::resetOdometry, // Method to reset odometry (will be called if your auto has a starting
-                                                 // pose)
-                this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
-                this::driveRobotOriented, // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
-                pathFollowerConfig,
-                this::getFlipPath,
-                this // Reference to this subsystem to set requirements
-        );*/
         setName("SwerveSubsystem");
         configurePathPlanner();
     }
@@ -73,16 +94,14 @@ public class SwerveSubsystem extends SubsystemBase {
     public Command driveToPose(Pose2d pose) {
         // Create the constraints to use while pathfinding
         PathConstraints constraints = new PathConstraints(
-                swerveDrive.getMaximumVelocity(), 4.0,
-                swerveDrive.getMaximumAngularVelocity(), Units.degreesToRadians(720));
+                swerveDrive.getMaximumChassisVelocity(), 4.0,
+                swerveDrive.getMaximumChassisAngularVelocity(), Units.degreesToRadians(720));
 
         // Since AutoBuilder is configured, we can use it to build pathfinding commands
         return AutoBuilder.pathfindToPose(
                 pose,
                 constraints,
-                0.0, // Goal end velocity in meters/sec
-                0.0 // Rotation delay distance in meters. This is how far the robot should travel
-                    // before attempting to rotate.
+                0.0 // Goal end velocity in meters/sec
         );
     }
 
@@ -179,7 +198,7 @@ public class SwerveSubsystem extends SubsystemBase {
                     headingX.getAsDouble(),
                     headingY.getAsDouble(),
                     swerveDrive.getOdometryHeading().getRadians(),
-                    swerveDrive.getMaximumVelocity()));
+                    swerveDrive.getMaximumChassisVelocity()));
         });
     }
 
@@ -201,7 +220,7 @@ public class SwerveSubsystem extends SubsystemBase {
                     translationY.getAsDouble(),
                     rotation.getAsDouble() * Math.PI,
                     swerveDrive.getOdometryHeading().getRadians(),
-                    swerveDrive.getMaximumVelocity()));
+                    swerveDrive.getMaximumChassisVelocity()));
         });
     }
 
@@ -264,18 +283,18 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     public void configurePathPlanner() {
-        AutoBuilder.configureHolonomic(
+        AutoBuilder.configure(
                 this::getPose, // Robot pose supplier
                 this::resetOdometry, // Method to reset odometry (will be called if your auto has a starting pose)
                 this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
                 this::driveRobotOriented, // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
-                new HolonomicPathFollowerConfig( // HolonomicPathFollowerConfig, this should likely live in your Constants class
-                    new PIDConstants(2.5, 0, 0), // Translation PID constants  2,0,0
-                    new PIDConstants(0.2, 0, 0), // Rotation PID constants
-                    5, // Max module speed, in m/s
-                    Units.inchesToMeters(13.5), // Drive base radius in meters. Distance from robot center to furthest module.
-                    new ReplanningConfig() // Default path replanning config. See the API for the options here
+                new PPHolonomicDriveController( // HolonomicPathFollowerConfig, this should likely live in your Constants class
+                    translationConstants, // Translation PID constants
+                    new PIDConstants(swerveDrive.swerveController.config.headingPIDF.p, 
+                        swerveDrive.swerveController.config.headingPIDF.i,
+                        swerveDrive.swerveController.config.headingPIDF.d) // Rotation PID constants
                 ),
+                config, // RobotConfig object
                 () -> {
                     // Boolean supplier that controls when the path will be mirrored for the red
                     // alliance
