@@ -6,6 +6,9 @@ import java.util.function.Supplier;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
@@ -46,9 +49,10 @@ public class XboxDriveCommand extends Command{
         x = xLimiter.calculate(x * kMaxVelTele);
         y = yLimiter.calculate(y * kMaxVelTele);
         rot = turnLimiter.calculate(rot * kMaxAngularVelTele);
-		if(fieldSupplier.get())
-			swerveSubsystem.driveFieldOriented(swerveSubsystem.swerveDrive.swerveController.getRawTargetSpeeds(x, y, rot));
-		else
+		if(fieldSupplier.get()){
+			Translation2d translation = new Translation2d(x, y).rotateBy(Rotation2d.fromDegrees(swerveSubsystem.getAngleOffset()));
+			swerveSubsystem.driveFieldOriented(new ChassisSpeeds(translation.getX(), translation.getY(), rot));
+		} else
 			swerveSubsystem.driveRobotOriented(swerveSubsystem.swerveDrive.swerveController.getRawTargetSpeeds(x, y, rot));
 	}
 

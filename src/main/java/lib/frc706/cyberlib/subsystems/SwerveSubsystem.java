@@ -40,6 +40,7 @@ public class SwerveSubsystem extends SubsystemBase {
     private final PhotonCameraWrapper[] cameras;
     private RobotConfig config;
     private PIDConstants translationConstants = new PIDConstants(2.5, 0, 0); //this is only here because YAGSL won't give us the one from the JSON file
+    private double angleOffset = 0;
 
     /**
      * Constructs a new SwerveSubsystem.
@@ -61,7 +62,7 @@ public class SwerveSubsystem extends SubsystemBase {
         }
         this.cameras = cameras;
         this.translationConstants = translationConstants;
-        layout.addDouble("Robot Heading", () -> getHeading());
+        layout.addDouble("Robot Heading", () -> getWrappedHeading());
         recenter();
         try {
             this.config = RobotConfig.fromGUISettings();
@@ -82,6 +83,8 @@ public class SwerveSubsystem extends SubsystemBase {
         swerveDrive.setHeadingCorrection(false);
         setName("SwerveSubsystem");
         configurePathPlanner();
+        swerveDrive.zeroGyro();
+        ((com.studica.frc.AHRS) swerveDrive.getGyro().getIMU()).zeroYaw();
     }
 
     /**
@@ -105,16 +108,39 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     public void zeroHeading() {
+        angleOffset = getWrappedHeading();
         // ((com.studica.frc.AHRS) swerveDrive.getGyro().getIMU()).zeroYaw();
-        swerveDrive.zeroGyro();
+        // swerveDrive.zeroGyro();
+    }
+
+    public double getAngleOffset() {
+        return angleOffset;
     }
 
     /**
-     * Get the heading of the robot.
+     * Get the unadjusted heading of the robot.
+     * 
+     * @return the robot's heading in degrees
+     */
+    public double getHeading() {
+        return swerveDrive.getOdometryHeading().getDegrees();
+    }
+
+    /**
+     * Get the adjusted heading of the robot, offset when zeroHeading() is called.
+     * 
+     * @return the robot's heading in degrees
+     */
+    public double getOffsetHeading() {
+        return swerveDrive.getOdometryHeading().getDegrees() - angleOffset;
+    }
+
+    /**
+     * Get the unadjusted heading of the robot.
      * 
      * @return the robot's heading in degrees, from 0 to 360
      */
-    public double getHeading() {
+    public double getWrappedHeading() {
         return Math.IEEEremainder(swerveDrive.getOdometryHeading().getDegrees(), 360);
         // TODO: why are we doing this?
     }
@@ -153,7 +179,7 @@ public class SwerveSubsystem extends SubsystemBase {
      * Recenter the robot's position on the field to (0,0) facing forwards.
      */
     public void recenter() {
-        resetOdometry(new Pose2d());
+        resetOdometry(new Pose2d(new Translation2d(), getRotation2d()));
         zeroHeading();
     }
 
@@ -251,8 +277,8 @@ public class SwerveSubsystem extends SubsystemBase {
     public void driveFieldOriented(ChassisSpeeds velocity) {
         swerveDrive.drive(ChassisSpeeds.fromFieldRelativeSpeeds(
                 velocity,
-                swerveDrive.getOdometryHeading()),
-                // Rotation2d.fromDegrees(-((com.studica.frc.AHRS) swerveDrive.getGyro().getIMU()).getAngle())),// get heading directly from the IMU and invert to make CCW+
+                // swerveDrive.getOdometryHeading()),
+                Rotation2d.fromDegrees(-((com.studica.frc.AHRS) swerveDrive.getGyro().getIMU()).getAngle())),// get heading directly from the IMU and invert to make CCW+
                  true,
                 new Translation2d());
     }

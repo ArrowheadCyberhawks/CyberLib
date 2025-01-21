@@ -28,11 +28,12 @@ public class LimelightSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         for (String name : names) {
-            boolean useMegaTag2 = false; // set to false to use MegaTag1
+            boolean useMegaTag2 = true; // set to false to use MegaTag1
             boolean doRejectUpdate = false;
-            if (useMegaTag2 == false) {
+            
+            if (!useMegaTag2) {
                 LimelightHelpers.PoseEstimate mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(name);
-
+                
                 if (mt1.tagCount == 1 && mt1.rawFiducials.length == 1) {
                     if (mt1.rawFiducials[0].ambiguity > .7) {
                         doRejectUpdate = true;
@@ -47,12 +48,13 @@ public class LimelightSubsystem extends SubsystemBase {
 
                 if (!doRejectUpdate) {
                     swerveSubsystem.swerveDrive.swerveDrivePoseEstimator
-                            .setVisionMeasurementStdDevs(VecBuilder.fill(.5, .5, 9999999));
+                            .setVisionMeasurementStdDevs(VecBuilder.fill(0.5, 0.5, 0.5));
                     swerveSubsystem.swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(
                             mt1.pose,
                             mt1.timestampSeconds);
+                    swerveSubsystem.swerveDrive.updateOdometry();
                 }
-            } else if (useMegaTag2 == true) {
+            } else if (useMegaTag2) {
                 LimelightHelpers.SetRobotOrientation(name, swerveSubsystem.swerveDrive.swerveDrivePoseEstimator
                         .getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
                 LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
