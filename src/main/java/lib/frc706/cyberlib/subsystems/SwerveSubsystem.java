@@ -17,6 +17,7 @@ import com.pathplanner.lib.path.PathConstraints;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -84,6 +85,8 @@ public class SwerveSubsystem extends SubsystemBase {
         swerveDrive.setHeadingCorrection(false);
         setName("SwerveSubsystem");
         configurePathPlanner();
+        swerveDrive.zeroGyro();
+        ((com.studica.frc.AHRS) swerveDrive.getGyro().getIMU()).zeroYaw();
     }
 
     /**
@@ -106,6 +109,19 @@ public class SwerveSubsystem extends SubsystemBase {
         );
     }
 
+    public void resetOdometry(Pose2d pose) {
+        // swerveDrive.resetOdometry(pose);
+        swerveDrive.swerveDrivePoseEstimator.resetPosition(getRotation2d(), swerveDrive.getModulePositions(), pose);
+    }
+
+    /**
+     * Recenter the robot's position on the field to (0,0) facing forwards.
+     */
+    public void recenter() {
+        resetOdometry(new Pose2d(new Translation2d(), new Rotation2d()));
+        // zeroHeading();
+    }
+
     public void zeroHeading() {
         // ((com.studica.frc.AHRS) swerveDrive.getGyro().getIMU()).zeroYaw();
         //swerveDrive.zeroGyro();
@@ -114,7 +130,7 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Get the heading of the robot.
+     * Get the unadjusted heading of the robot.
      * 
      * @return the robot's heading in degrees, from 0 to 360
      */
@@ -147,18 +163,6 @@ public class SwerveSubsystem extends SubsystemBase {
             }
         }
         return false; // if we don't know then just give up and say no
-    }
-
-    public void resetOdometry(Pose2d pose) {
-        swerveDrive.resetOdometry(pose);
-    }
-
-    /**
-     * Recenter the robot's position on the field to (0,0) facing forwards.
-     */
-    public void recenter() {
-        resetOdometry(new Pose2d());
-        zeroHeading();
     }
 
     /**
