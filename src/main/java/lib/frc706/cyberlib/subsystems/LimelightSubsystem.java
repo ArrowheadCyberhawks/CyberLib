@@ -27,8 +27,9 @@ public class LimelightSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
+        swerveSubsystem.swerveDrive.updateOdometry();
         for (String name : names) {
-            boolean useMegaTag2 = true; // set to false to use MegaTag1
+            boolean useMegaTag2 = false; // set to false to use MegaTag1
             boolean doRejectUpdate = false;
             
             if (!useMegaTag2) {
@@ -52,7 +53,7 @@ public class LimelightSubsystem extends SubsystemBase {
                     swerveSubsystem.swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(
                             mt1.pose,
                             mt1.timestampSeconds);
-                    swerveSubsystem.swerveDrive.updateOdometry();
+                    // swerveSubsystem.swerveDrive.updateOdometry();
                 }
             } else if (useMegaTag2) {
                 LimelightHelpers.SetRobotOrientation(name, swerveSubsystem.swerveDrive.swerveDrivePoseEstimator
@@ -67,11 +68,11 @@ public class LimelightSubsystem extends SubsystemBase {
                 }
                 if (!doRejectUpdate) {
                     swerveSubsystem.swerveDrive.swerveDrivePoseEstimator
-                            .setVisionMeasurementStdDevs(VecBuilder.fill(.7, .7, 9999999));
+                            .setVisionMeasurementStdDevs(VecBuilder.fill(.6, .6, 9999999));
                     swerveSubsystem.swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(
                             mt2.pose,
                             mt2.timestampSeconds);
-                    swerveSubsystem.swerveDrive.updateOdometry();
+                    // swerveSubsystem.swerveDrive.updateOdometry();
                 }
             }
         }

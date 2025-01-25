@@ -17,7 +17,6 @@ import com.pathplanner.lib.path.PathConstraints;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -40,7 +39,7 @@ public class SwerveSubsystem extends SubsystemBase {
     private final ShuffleboardLayout layout;
     private final PhotonCameraWrapper[] cameras;
     private RobotConfig config;
-    private PIDConstants translationConstants = new PIDConstants(2.5, 0, 0); //this is only here because YAGSL won't give us the one from the JSON file
+    private PIDConstants translationConstants, thetaConstants; //this is only here because YAGSL won't give us the one from the JSON file
 
     private double headingOffset = 0; // Difference between actual robot angle and angle of forward driving
 
@@ -54,7 +53,7 @@ public class SwerveSubsystem extends SubsystemBase {
      * 
      * @throws RuntimeException if the swerve drive creation fails.
      */
-    public SwerveSubsystem(File configDir, double maxVel, PIDConstants translationConstants, PhotonCameraWrapper... cameras) {
+    public SwerveSubsystem(File configDir, double maxVel, PIDConstants translationConstants, PIDConstants thetaConstants, PhotonCameraWrapper... cameras) {
         layout = Shuffleboard.getTab("SwerveDrive").getLayout("SwerveDrive", BuiltInLayouts.kGrid);
         //SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
         try {
@@ -64,6 +63,7 @@ public class SwerveSubsystem extends SubsystemBase {
         }
         this.cameras = cameras;
         this.translationConstants = translationConstants;
+        this.thetaConstants = thetaConstants;
         layout.addDouble("Robot Heading", () -> getHeading());
         recenter();
         try {
@@ -110,8 +110,9 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     public void resetOdometry(Pose2d pose) {
-        // swerveDrive.resetOdometry(pose);
-        swerveDrive.swerveDrivePoseEstimator.resetPosition(getRotation2d(), swerveDrive.getModulePositions(), pose);
+        swerveDrive.resetOdometry(pose);
+        zeroHeading();
+        //swerveDrive.swerveDrivePoseEstimator.resetPosition(getRotation2d(), swerveDrive.getModulePositions(), pose);
     }
 
     /**
@@ -299,9 +300,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 this::driveRobotOriented, // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
                 new PPHolonomicDriveController( // HolonomicPathFollowerConfig, this should likely live in your Constants class
                     translationConstants, // Translation PID constants
-                    new PIDConstants(swerveDrive.swerveController.config.headingPIDF.p, 
-                        swerveDrive.swerveController.config.headingPIDF.i,
-                        swerveDrive.swerveController.config.headingPIDF.d) // Rotation PID constants
+                    thetaConstants // Rotation PID constants
                 ),
                 config, // RobotConfig object
                 () -> {
