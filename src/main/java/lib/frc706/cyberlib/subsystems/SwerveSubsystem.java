@@ -17,6 +17,7 @@ import com.pathplanner.lib.path.PathConstraints;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -107,10 +108,23 @@ public class SwerveSubsystem extends SubsystemBase {
         );
     }
 
+    public void resetOdometry(Pose2d pose) {
+        // swerveDrive.resetOdometry(pose);
+        swerveDrive.swerveDrivePoseEstimator.resetPosition(getRotation2d(), swerveDrive.getModulePositions(), pose);
+    }
+
+    /**
+     * Recenter the robot's position on the field to (0,0) facing forwards.
+     */
+    public void recenter() {
+        resetOdometry(new Pose2d(new Translation2d(), new Rotation2d()));
+        angleOffset = 0;
+        // zeroHeading();
+    }
+
     public void zeroHeading() {
         angleOffset = getWrappedHeading();
         // ((com.studica.frc.AHRS) swerveDrive.getGyro().getIMU()).zeroYaw();
-        // swerveDrive.zeroGyro();
     }
 
     public double getAngleOffset() {
@@ -169,18 +183,6 @@ public class SwerveSubsystem extends SubsystemBase {
             }
         }
         return false; // if we don't know then just give up and say no
-    }
-
-    public void resetOdometry(Pose2d pose) {
-        swerveDrive.resetOdometry(pose);
-    }
-
-    /**
-     * Recenter the robot's position on the field to (0,0) facing forwards.
-     */
-    public void recenter() {
-        resetOdometry(new Pose2d(new Translation2d(), getRotation2d()));
-        zeroHeading();
     }
 
     /**
