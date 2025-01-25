@@ -41,6 +41,8 @@ public class SwerveSubsystem extends SubsystemBase {
     private RobotConfig config;
     private PIDConstants translationConstants = new PIDConstants(2.5, 0, 0); //this is only here because YAGSL won't give us the one from the JSON file
 
+    private double headingOffset = 0; // Difference between actual robot angle and angle of forward driving
+
     /**
      * Constructs a new SwerveSubsystem.
      *
@@ -106,7 +108,9 @@ public class SwerveSubsystem extends SubsystemBase {
 
     public void zeroHeading() {
         // ((com.studica.frc.AHRS) swerveDrive.getGyro().getIMU()).zeroYaw();
-        swerveDrive.zeroGyro();
+        //swerveDrive.zeroGyro();
+        // swerveDrive.setGyroOffset(swerveDrive.getGyroRotation3d());
+        headingOffset = getHeading();
     }
 
     /**
@@ -251,7 +255,7 @@ public class SwerveSubsystem extends SubsystemBase {
     public void driveFieldOriented(ChassisSpeeds velocity) {
         swerveDrive.drive(ChassisSpeeds.fromFieldRelativeSpeeds(
                 velocity,
-                swerveDrive.getOdometryHeading()),
+                swerveDrive.getOdometryHeading().minus(Rotation2d.fromDegrees(headingOffset))),
                 // Rotation2d.fromDegrees(-((com.studica.frc.AHRS) swerveDrive.getGyro().getIMU()).getAngle())),// get heading directly from the IMU and invert to make CCW+
                  true,
                 new Translation2d());

@@ -30,26 +30,26 @@ public class XboxDriveCommand extends Command{
 
 	@Override
 	public void execute() {
-		double x = -controller.getLeftY(); //invert because up is negative for some reason
-		double y = -controller.getLeftX(); //invert because FOC left is +y, controller right is +y
-		double rot = -controller.getRightX(); //invert because FOC CCW is +rot, controller right is +
+		double xInput = -controller.getLeftY(); //invert because up is negative for some reason
+		double yInput = -controller.getLeftX(); //invert because FOC left is +y, controller right is +y
+		double rotInput = -controller.getRightX(); //invert because FOC CCW is +rot, controller right is +
 		double accelMultiplier = controller.getRightTriggerAxis();
-		x = MathUtil.applyDeadband(x, kDeadband);
-        y = MathUtil.applyDeadband(y, kDeadband);
-        rot = MathUtil.applyDeadband(rot, kDeadband);
-		x = Math.copySign(x * x, x);
-		y = Math.copySign(y * y, y);
-		rot = Math.copySign(rot * rot, rot);
-		x *= MathUtil.interpolate(0.15, 1, accelMultiplier);
-		y *= MathUtil.interpolate(0.15, 1, accelMultiplier);
-		rot *= MathUtil.interpolate(0.20, 1, accelMultiplier);
-        x = xLimiter.calculate(x * kMaxVelTele);
-        y = yLimiter.calculate(y * kMaxVelTele);
-        rot = turnLimiter.calculate(rot * kMaxAngularVelTele);
+		xInput = MathUtil.applyDeadband(xInput, kDeadband);
+        yInput = MathUtil.applyDeadband(yInput, kDeadband);
+        rotInput = MathUtil.applyDeadband(rotInput, kDeadband);
+		xInput = Math.copySign(xInput * xInput, xInput);
+		yInput = Math.copySign(yInput * yInput, yInput);
+		rotInput = Math.copySign(rotInput * rotInput, rotInput);
+		xInput *= MathUtil.interpolate(0.15, 1, accelMultiplier);
+		yInput *= MathUtil.interpolate(0.15, 1, accelMultiplier);
+		rotInput *= MathUtil.interpolate(0.20, 1, accelMultiplier);
+        double xSpeed = xLimiter.calculate(xInput * kMaxVelTele);
+        double ySpeed = yLimiter.calculate(yInput * kMaxVelTele);
+        double rotSpeed = turnLimiter.calculate(rotInput * kMaxAngularVelTele);
 		if(fieldSupplier.get())
-			swerveSubsystem.driveFieldOriented(swerveSubsystem.swerveDrive.swerveController.getRawTargetSpeeds(x, y, rot));
+			swerveSubsystem.driveFieldOriented(swerveSubsystem.swerveDrive.swerveController.getRawTargetSpeeds(xSpeed, ySpeed, rotSpeed));
 		else
-			swerveSubsystem.driveRobotOriented(swerveSubsystem.swerveDrive.swerveController.getRawTargetSpeeds(x, y, rot));
+			swerveSubsystem.driveRobotOriented(swerveSubsystem.swerveDrive.swerveController.getRawTargetSpeeds(xSpeed, ySpeed, rotSpeed));
 	}
 
 	@Override
