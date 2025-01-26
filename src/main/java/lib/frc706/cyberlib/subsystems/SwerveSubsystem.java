@@ -41,7 +41,7 @@ public class SwerveSubsystem extends SubsystemBase {
     private RobotConfig config;
     private PIDConstants translationConstants, thetaConstants; //this is only here because YAGSL won't give us the one from the JSON file
 
-    private double headingOffset = 0; // Difference between actual robot angle and angle of forward driving
+    private static double headingOffset = 0; // Difference between actual robot angle and angle of forward driving
 
     /**
      * Constructs a new SwerveSubsystem.
@@ -138,6 +138,10 @@ public class SwerveSubsystem extends SubsystemBase {
     public double getHeading() {
         return Math.IEEEremainder(swerveDrive.getOdometryHeading().getDegrees(), 360);
         // TODO: why are we doing this?
+    }
+
+    public double getHeadingOffset() {
+        return headingOffset;
     }
 
     /**
