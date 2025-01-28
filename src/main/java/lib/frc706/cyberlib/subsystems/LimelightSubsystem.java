@@ -3,20 +3,20 @@ package lib.frc706.cyberlib.subsystems;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 
 import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.networktables.NetworkTableEntry;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class LimelightSubsystem extends SubsystemBase {
     private String[] names;
     private SwerveSubsystem swerveSubsystem;
+
+    private boolean useMegaTag2;
     //private NetworkTableInstance ntinst = NetworkTableInstance.getDefault();
     //private NetworkTableEntry[] botposes;
 
-    public LimelightSubsystem(SwerveSubsystem swerveSubsystem, String... names) {
+    public LimelightSubsystem(SwerveSubsystem swerveSubsystem, boolean useMegaTag2, String... names) {
         this.names = names;
         this.swerveSubsystem = swerveSubsystem;
-
+        this.useMegaTag2 = useMegaTag2;
         /*
          * botposes = new NetworkTableEntry[names.length];
          * for (int i = 0; i < names.length; i++) {
@@ -29,7 +29,6 @@ public class LimelightSubsystem extends SubsystemBase {
     public void periodic() {
         swerveSubsystem.swerveDrive.updateOdometry();
         for (String name : names) {
-            boolean useMegaTag2 = true; // set to false to use MegaTag1
             boolean doRejectUpdate = false;
             
             if (!useMegaTag2) {
@@ -49,11 +48,10 @@ public class LimelightSubsystem extends SubsystemBase {
 
                 if (!doRejectUpdate) {
                     swerveSubsystem.swerveDrive.swerveDrivePoseEstimator
-                            .setVisionMeasurementStdDevs(VecBuilder.fill(0.6, 0.6, 99999));
+                            .setVisionMeasurementStdDevs(VecBuilder.fill(5, 5, 1.5));// nitin do not touch this number again
                     swerveSubsystem.swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(
                             mt1.pose,
                             mt1.timestampSeconds);
-                    // swerveSubsystem.swerveDrive.updateOdometry();
                 }
             } else if (useMegaTag2) { //TODO DEBUG
                 LimelightHelpers.SetRobotOrientation(name,swerveSubsystem.getHeading(), 0, 0, 0, 0, 0);
@@ -68,7 +66,7 @@ public class LimelightSubsystem extends SubsystemBase {
                 }
                 if (!doRejectUpdate) {
                     swerveSubsystem.swerveDrive.swerveDrivePoseEstimator
-                            .setVisionMeasurementStdDevs(VecBuilder.fill(.6, .6, 1));
+                            .setVisionMeasurementStdDevs(VecBuilder.fill(1, 1, 1));
                     swerveSubsystem.swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(
                             mt2.pose,
                             mt2.timestampSeconds);
