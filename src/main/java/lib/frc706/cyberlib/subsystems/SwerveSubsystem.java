@@ -274,7 +274,7 @@ public class SwerveSubsystem extends SubsystemBase {
     public void periodic() {
         for (PhotonCameraWrapper camera : cameras) {
             Optional<EstimatedRobotPose> result = camera.getEstimatedGlobalPose(getPose());
-            if (result.isPresent()) {
+            if (result.isPresent() && Math.abs(getRobotRelativeSpeeds().omegaRadiansPerSecond) < 4 * Math.PI) { 
                 swerveDrive.addVisionMeasurement(result.get().estimatedPose.toPose2d(),
                         result.get().timestampSeconds);
             }
