@@ -15,9 +15,11 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
 
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -275,8 +277,15 @@ public class SwerveSubsystem extends SubsystemBase {
         for (PhotonCameraWrapper camera : cameras) {
             Optional<EstimatedRobotPose> result = camera.getEstimatedGlobalPose(getPose());
             if (result.isPresent() && Math.abs(getRobotRelativeSpeeds().omegaRadiansPerSecond) < 4 * Math.PI) { 
-                swerveDrive.addVisionMeasurement(result.get().estimatedPose.toPose2d(),
-                        result.get().timestampSeconds);
+                double minDistance = Double.MAX_VALUE;
+                for (var target : result.get().targetsUsed) {
+                    double distance = target.getBestCameraToTarget().getTranslation().getDistance(new Translation3d());
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                    }
+                }
+                swerveDrive.addVisionMeasurement(result.get().estimatedPose.toPose2d(), result.get().timestampSeconds,
+                VecBuilder.fill(minDistance, minDistance, minDistance));
             }
         }
     }
