@@ -10,7 +10,6 @@ import lib.frc706.cyberlib.subsystems.SwerveSubsystem;
 public class ToPointCommand extends TrackPointCommand {
     
     private PIDController xController, yController;
-    private Supplier<Pose2d> targetSupplier;
     private double desiredDistance;
 
     /**

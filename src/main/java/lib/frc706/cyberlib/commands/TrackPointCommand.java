@@ -14,26 +14,33 @@ import lib.frc706.cyberlib.subsystems.SwerveSubsystem;
  */
 public class TrackPointCommand extends Command {
 
-    protected final SwerveSubsystem swerveSubsystem;
+    protected static SwerveSubsystem swerveSubsystem;
     private Supplier<Double> xSupplier, ySupplier, accelSupplier;
-    private final PIDController m_turningController;
+    private static PIDController m_turningController;
 
-    private final double maxVel, maxAngularVel;
+    private static double maxVel = Double.MIN_VALUE;
+    private static double maxAngularVel = Double.MIN_VALUE;
     protected Supplier<Pose2d> targetSupplier;
     private final boolean controllerCorrections;
 
-    public TrackPointCommand(SwerveSubsystem swerveSubsystem, Supplier<Pose2d> target,
+    public TrackPointCommand(SwerveSubsystem swerveSubsystem, Supplier<Pose2d> targetSupplier,
         Supplier<Double> xSpdFunction, Supplier<Double> ySpdFunction, Supplier<Double> accelFunction, double maxVel, double maxAngularVel, boolean controllerCorrections, PIDController turningController) {
-        this.swerveSubsystem = swerveSubsystem;
+        TrackPointCommand.swerveSubsystem = swerveSubsystem;
+        this.targetSupplier = targetSupplier;
         this.xSupplier = xSpdFunction;
         this.ySupplier = ySpdFunction;
         this.accelSupplier = accelFunction;
         this.controllerCorrections = controllerCorrections;
-        this.maxVel = maxVel;
-        this.maxAngularVel = maxAngularVel;
+        TrackPointCommand.maxVel = maxVel;
+        TrackPointCommand.maxAngularVel = maxAngularVel;
         m_turningController = turningController;
         addRequirements(swerveSubsystem);
     }
+//TODO: add more constructors so we don't have to deal with that... thing up there every single time
+    // public TrackPointCommand(Supplier<Pose2d> targetSupplier, Supplier<Double> xSpdFunction, Supplier<Double> ySpdFunction, Supplier<Double> accelFunction, boolean controllerCorrections) {
+    //     this(swerveSubsystem, targetSupplier, xSpdFunction, ySpdFunction, accelFunction, maxVel, maxAngularVel, controllerCorrections, m_turningController);
+    // }
+
 
     public void setXSupplier(Supplier<Double> newSupplier) {
         xSupplier = newSupplier;
