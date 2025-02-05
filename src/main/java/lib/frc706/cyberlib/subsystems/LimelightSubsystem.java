@@ -30,7 +30,8 @@ public class LimelightSubsystem extends SubsystemBase {
         swerveSubsystem.swerveDrive.updateOdometry();
         for (String name : names) {
             boolean doRejectUpdate = false;
-            
+            LimelightHelpers.SetRobotOrientation(name,swerveSubsystem.swerveDrive.getOdometryHeading().getDegrees(), 0, 0, 0, 0, 0);
+            System.out.println(swerveSubsystem.swerveDrive.getOdometryHeading().getDegrees());
             if (!useMegaTag2) {
                 LimelightHelpers.PoseEstimate mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(name);
                 
@@ -54,7 +55,7 @@ public class LimelightSubsystem extends SubsystemBase {
                             mt1.timestampSeconds);
                 }
             } else if (useMegaTag2) { //TODO DEBUG
-                LimelightHelpers.SetRobotOrientation(name,swerveSubsystem.getHeading(), 0, 0, 0, 0, 0);
+                LimelightHelpers.SetRobotOrientation(name,swerveSubsystem.swerveDrive.getOdometryHeading().getDegrees(), 0, 0, 0, 0, 0);
                 LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
                 System.out.println(swerveSubsystem.getRotation2d().getDegrees() + " " + swerveSubsystem.getHeading());
 
