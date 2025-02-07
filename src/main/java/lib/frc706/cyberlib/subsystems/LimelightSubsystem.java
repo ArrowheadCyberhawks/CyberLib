@@ -31,9 +31,11 @@ public class LimelightSubsystem extends SubsystemBase {
         for (String name : names) {
             boolean doRejectUpdate = false;
             LimelightHelpers.SetRobotOrientation(name,swerveSubsystem.swerveDrive.getOdometryHeading().getDegrees(), 0, 0, 0, 0, 0);
-            System.out.println(swerveSubsystem.swerveDrive.getOdometryHeading().getDegrees());
             if (!useMegaTag2) {
                 LimelightHelpers.PoseEstimate mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(name);
+                if (mt1 == null) {
+                    continue;
+                }
                 
                 if (mt1.tagCount == 1 && mt1.rawFiducials.length == 1) {
                     if (mt1.rawFiducials[0].ambiguity > .7) {
@@ -57,7 +59,10 @@ public class LimelightSubsystem extends SubsystemBase {
             } else if (useMegaTag2) { //TODO DEBUG
                 LimelightHelpers.SetRobotOrientation(name,swerveSubsystem.swerveDrive.getOdometryHeading().getDegrees(), 0, 0, 0, 0, 0);
                 LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
-                System.out.println(swerveSubsystem.getRotation2d().getDegrees() + " " + swerveSubsystem.getHeading());
+                if (mt2 == null) {
+                    continue;
+                }
+                // System.out.println(swerveSubsystem.getRotation2d().getDegrees() + " " + swerveSubsystem.getHeading());
 
                 if (Math.abs(swerveSubsystem.swerveDrive.getGyro().getYawAngularVelocity().in(DegreesPerSecond)) > 720) { //if the angular velocity is too high it disregards all megatag localizatoin code
                     doRejectUpdate = true;
