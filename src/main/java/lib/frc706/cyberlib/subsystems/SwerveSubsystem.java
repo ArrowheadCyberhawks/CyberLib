@@ -39,6 +39,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import swervelib.SwerveDrive;
 import swervelib.parser.SwerveParser;
+import org.littletonrobotics.junction.Logger;
 
 public class SwerveSubsystem extends SubsystemBase {
     public final SwerveDrive swerveDrive;
@@ -108,11 +109,12 @@ public class SwerveSubsystem extends SubsystemBase {
                         minDistance = distance;
                     }
                 }
+                minDistance *= 3;
                 swerveDrive.addVisionMeasurement(result.get().estimatedPose.toPose2d(), result.get().timestampSeconds,
                 VecBuilder.fill(minDistance, minDistance, minDistance));
             }
         }
-        
+        Logger.recordOutput(getName() + "/Robot Pose", getPose());
         if (swerveDrive.getPose() == Pose2d.kZero) {
             poseAlert.set(true);
         } else {
@@ -341,6 +343,7 @@ public class SwerveSubsystem extends SubsystemBase {
         PathPlannerLogging.setLogActivePathCallback((poses) -> {
             // Do whatever you want with the poses here
             swerveDrive.field.getObject("path").setPoses(poses);
+            Logger.recordOutput("Path", poses.toArray(new Pose2d[poses.size()]));
         });
     }
 
