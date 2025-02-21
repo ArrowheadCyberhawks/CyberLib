@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.function.DoubleSupplier;
 
 import org.photonvision.EstimatedRobotPose;
+import org.photonvision.PhotonCamera;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.ModuleConfig;
@@ -16,6 +17,8 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.util.PathPlannerLogging;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -48,6 +51,7 @@ public class SwerveSubsystem extends SubsystemBase {
     private RobotConfig config;
     private PIDConstants translationConstants, thetaConstants; //this is only here because YAGSL won't give us the one from the JSON file
     private Alert poseAlert = new Alert(getName(), "No robot pose!", AlertType.kWarning);
+    
 
     private static double headingOffset = 0; // Difference between actual robot angle and angle of forward driving
 
@@ -100,19 +104,38 @@ public class SwerveSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         for (PhotonCameraWrapper camera : cameras) {
-            Optional<EstimatedRobotPose> result = camera.getEstimatedGlobalPose(getPose());
-            if (result.isPresent() && Math.abs(getRobotRelativeSpeeds().omegaRadiansPerSecond) < 4 * Math.PI) { 
-                double minDistance = Double.MAX_VALUE;
-                for (var target : result.get().targetsUsed) {
-                    double distance = target.getBestCameraToTarget().getTranslation().getDistance(new Translation3d());
-                    if (distance < minDistance) {
-                        minDistance = distance;
+            camera.photonCamera.getAllUnreadResults().forEach((result) -> {
+                if(result.hasTargets()) {
+                    for (var target : result.getTargets()) {
+                        swerveDrive.addVisionMeasurement(
+                            new Pose2d(
+                                target.getBestCameraToTarget().getTranslation().toTranslation2d(),
+                                target.getBestCameraToTarget().getRotation().toRotation2d()
+                            ),
+                            result.getTimestampSeconds(),
+                            VecBuilder.fill(
+                                target.getPoseAmbiguity()*10,
+                                target.getPoseAmbiguity()*10,
+                                target.getPoseAmbiguity()*10
+                            )
+                        );
                     }
                 }
-                minDistance *= 3;
-                swerveDrive.addVisionMeasurement(result.get().estimatedPose.toPose2d(), result.get().timestampSeconds,
-                VecBuilder.fill(minDistance, minDistance, minDistance));
             }
+            );
+            // Optional<EstimatedRobotPose> result = camera.getEstimatedGlobalPose(getPose());
+            // if (result.isPresent() && Math.abs(getRobotRelativeSpeeds().omegaRadiansPerSecond) < 4 * Math.PI) { 
+            //     double minDistance = Double.MAX_VALUE;
+            //     for (var target : result.get().targetsUsed) {
+            //         double distance = target.getBestCameraToTarget().getTranslation().getDistance(new Translation3d());
+            //         if (distance < minDistance) {
+            //             minDistance = distance;
+            //         }
+            //     }
+            //     minDistance *= 3;
+            //     swerveDrive.addVisionMeasurement(result.get().estimatedPose.toPose2d(), result.get().timestampSeconds,
+            //     VecBuilder.fill(minDistance, minDistance, minDistance));
+            // }
         }
         Logger.recordOutput(getName() + "/Robot Pose", getPose());
         if (swerveDrive.getPose() == Pose2d.kZero) {

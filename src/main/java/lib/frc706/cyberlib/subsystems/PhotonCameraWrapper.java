@@ -39,7 +39,7 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class PhotonCameraWrapper {
-	private PhotonCamera photonCamera;
+	PhotonCamera photonCamera;
 	private PhotonPoseEstimator photonPoseEstimator;
 
 	public PhotonCameraWrapper(String cameraName, Transform3d robotToCam) {
