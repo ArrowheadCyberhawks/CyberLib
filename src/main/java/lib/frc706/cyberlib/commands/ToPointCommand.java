@@ -80,7 +80,7 @@ public class ToPointCommand extends TrackPointCommand {
      */
     private static double calculatePolarAngleTo(Pose2d currentPose, Pose2d targetPose) {
                                                                             // TODO: ?!?!?!?!?!?!?!?!?!?!??!?!
-        return currentPose.getRotation().minus(targetPose.getRotation()).minus(Rotation2d.kPi.div(3)).getRadians();
+        return currentPose.getRotation().minus(targetPose.getRotation()).minus(Rotation2d.fromDegrees(69)).getRadians();
     }
 
     @Override
