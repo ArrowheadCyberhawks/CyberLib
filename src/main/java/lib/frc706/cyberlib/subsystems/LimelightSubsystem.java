@@ -8,15 +8,17 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class LimelightSubsystem extends SubsystemBase {
     private String[] names;
     private SwerveSubsystem swerveSubsystem;
-
+    
+    private boolean usePose;
     private boolean useMegaTag2;
     //private NetworkTableInstance ntinst = NetworkTableInstance.getDefault();
     //private NetworkTableEntry[] botposes;
 
-    public LimelightSubsystem(SwerveSubsystem swerveSubsystem, boolean useMegaTag2, String... names) {
+    public LimelightSubsystem(SwerveSubsystem swerveSubsystem, boolean usePose, boolean useMegaTag2, String... names) {
         this.names = names;
         this.swerveSubsystem = swerveSubsystem;
         this.useMegaTag2 = useMegaTag2;
+        this.usePose = usePose;
         /*
          * botposes = new NetworkTableEntry[names.length];
          * for (int i = 0; i < names.length; i++) {
@@ -27,6 +29,22 @@ public class LimelightSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
+        if (usePose) {
+            poseUpdate();
+        } else {
+            tagOffset();
+        }
+        
+    }
+
+    public void tagOffset() {
+        for (String name : names) {
+            //not really doing anything here uhhhhhhh
+            //sounds like a later problem
+        }
+    }
+
+    public void poseUpdate() {
         swerveSubsystem.swerveDrive.updateOdometry();
         for (String name : names) {
             boolean doRejectUpdate = false;
@@ -56,7 +74,7 @@ public class LimelightSubsystem extends SubsystemBase {
                             mt1.pose,
                             mt1.timestampSeconds);
                 }
-            } else if (useMegaTag2) { //TODO DEBUG
+            } else if (useMegaTag2) {
                 LimelightHelpers.SetRobotOrientation(name,swerveSubsystem.swerveDrive.getOdometryHeading().getDegrees(), 0, 0, 0, 0, 0);
                 LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
                 if (mt2 == null) {

@@ -8,6 +8,8 @@ import java.util.function.DoubleSupplier;
 
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
+import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.ModuleConfig;
@@ -22,6 +24,7 @@ import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -81,11 +84,11 @@ public class SwerveSubsystem extends SubsystemBase {
         try {
             this.config = RobotConfig.fromGUISettings();
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(); 
             this.config = new RobotConfig(Kilograms.of(swerveDrive.swerveDriveConfiguration.physicalCharacteristics.robotMassKg),
-                MomentOfInertia.ofRelativeUnits(swerveDrive.swerveDriveConfiguration.physicalCharacteristics.steerRotationalInertia, KilogramSquareMeters),
+               MomentOfInertia.ofRelativeUnits(swerveDrive.swerveDriveConfiguration.physicalCharacteristics.steerRotationalInertia, KilogramSquareMeters),
                 new ModuleConfig(Meters.of(swerveDrive.swerveDriveConfiguration.getDriveBaseRadiusMeters()),
-                swerveDrive.getMaximumModuleDriveVelocity(),
+                MetersPerSecond.of(swerveDrive.getMaximumModuleDriveVelocity()),
                 swerveDrive.swerveDriveConfiguration.modules[0].configuration.physicalCharacteristics.wheelGripCoefficientOfFriction,
                 swerveDrive.swerveDriveConfiguration.getDriveMotorSim(),
                 Amps.of(swerveDrive.swerveDriveConfiguration.modules[0].configuration.physicalCharacteristics.driveMotorCurrentLimit),
@@ -104,37 +107,74 @@ public class SwerveSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         for (PhotonCameraWrapper camera : cameras) {
-            camera.photonCamera.getAllUnreadResults().forEach((result) -> {
-                if(result.hasTargets()) {
-                    for (var target : result.getTargets()) {
-                        swerveDrive.addVisionMeasurement(
-                            new Pose2d(
-                                target.getBestCameraToTarget().getTranslation().toTranslation2d(),
-                                target.getBestCameraToTarget().getRotation().toRotation2d()
-                            ),
-                            result.getTimestampSeconds(),
-                            VecBuilder.fill(
-                                target.getPoseAmbiguity()*10,
-                                target.getPoseAmbiguity()*10,
-                                target.getPoseAmbiguity()*10
-                            )
-                        );
+            PhotonPipelineResult result = camera.photonCamera.getLatestResult();
+                    camera.photonPoseEstimator.setLastPose(getPose());
+            Optional<EstimatedRobotPose> estimatedPose = camera.getEstimatedGlobalPose(getPose());
+            if (estimatedPose.isPresent() && Math.abs(getRobotRelativeSpeeds().omegaRadiansPerSecond) < 4 * Math.PI) {
+                boolean rejectUpdate = false;
+                double maxAmbiguity = 0;
+                for (var target : estimatedPose.get().targetsUsed) {
+                    if(Math.abs(target.get()) < 20) {
+                        rejectUpdate = true;
+                    }
+                    System.out.println("Skew: " + target.getSkew());
+                    double ambiguity = target.getPoseAmbiguity();
+                    if(ambiguity > 0.1)
+                        rejectUpdate = true;    
+                    else if (ambiguity > maxAmbiguity)
+                        maxAmbiguity = ambiguity;
+                    
+                    // we hate the barge tags
+                    if (target.getFiducialId() == 4 || target.getFiducialId() == 5 || target.getFiducialId() == 14 || target.getFiducialId() == 15) {
+                        rejectUpdate = true;
                     }
                 }
+                if(!rejectUpdate && estimatedPose.isPresent()) {
+                    swerveDrive.addVisionMeasurement(
+                        estimatedPose.get().estimatedPose.toPose2d(),
+                        result.getTimestampSeconds(),
+                        VecBuilder.fill(
+                            maxAmbiguity*20,
+                            maxAmbiguity*20,
+                            maxAmbiguity*10
+                        )
+                    );
+                }
             }
-            );
-            // Optional<EstimatedRobotPose> result = camera.getEstimatedGlobalPose(getPose());
-            // if (result.isPresent() && Math.abs(getRobotRelativeSpeeds().omegaRadiansPerSecond) < 4 * Math.PI) { 
-            //     double minDistance = Double.MAX_VALUE;
-            //     for (var target : result.get().targetsUsed) {
-            //         double distance = target.getBestCameraToTarget().getTranslation().getDistance(new Translation3d());
-            //         if (distance < minDistance) {
-            //             minDistance = distance;
+
+            
+
+            // if (Math.abs(getRobotRelativeSpeeds().omegaRadiansPerSecond) < 4 * Math.PI || (Math.abs(getRobotRelativeSpeeds().vxMetersPerSecond) < 0.75 && Math.abs(getRobotRelativeSpeeds().vyMetersPerSecond) < 0.75)) {
+            //     camera.photonCamera.getAllUnreadResults().forEach((result) -> {
+            //         if(result.hasTargets()) {
+            //             boolean rejectUpdate = false;
+            //             double maxAmbiguity = 0;
+            //             var targets = result.getTargets();
+            //             for(var target : targets) {
+            //                 double ambiguity = target.getPoseAmbiguity();
+            //                 if(ambiguity > 0.3)
+            //                     rejectUpdate = true;    
+            //                 else if (ambiguity > maxAmbiguity)
+            //                     maxAmbiguity = ambiguity;
+            //                 // we hate the barge tags
+            //                 if (target.getFiducialId() == 4 || target.getFiducialId() == 5 || target.getFiducialId() == 14 || target.getFiducialId() == 15) {
+            //                     rejectUpdate = true;
+            //                 }
+            //             }
+            //             Optional<EstimatedRobotPose> estimatedPose = camera.photonPoseEstimator.update(result);
+            //             if(!rejectUpdate && estimatedPose.isPresent()) {
+            //                 swerveDrive.addVisionMeasurement(
+            //                     estimatedPose.get().estimatedPose.toPose2d(),
+            //                     result.getTimestampSeconds(),
+            //                     VecBuilder.fill(
+            //                         maxAmbiguity*5,
+            //                         maxAmbiguity*5,
+            //                         maxAmbiguity*5
+            //                     )
+            //                 );
+            //             }
             //         }
-            //     }
-            //     minDistance *= 3;
-            //     swerveDrive.addVisionMeasurement(result.get().estimatedPose.toPose2d(), result.get().timestampSeconds,
-            //     VecBuilder.fill(minDistance, minDistance, minDistance));
+            //     });
             // }
         }
         Logger.recordOutput(getName() + "/Robot Pose", getPose());

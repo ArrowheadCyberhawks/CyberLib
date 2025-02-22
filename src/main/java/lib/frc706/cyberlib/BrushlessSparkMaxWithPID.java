@@ -58,21 +58,19 @@ public class BrushlessSparkMaxWithPID {
         config = new SparkMaxConfig();
         config.closedLoop.pidf(kP, kI, kD, kFF);
         config.closedLoop.iZone(kIz);
-        config.closedLoop.smartMotion.maxVelocity(maxVel);//spark ID is used as the smart motion id
-        config.closedLoop.smartMotion.maxAcceleration(maxAcc);//spark ID is used as the smart motion id
-        config.closedLoop.smartMotion.allowedClosedLoopError(allowedErr);//spark ID is used as the smart motion id
+        config.closedLoop.maxMotion.maxVelocity(maxVel);//spark ID is used as the smart motion id
+        config.closedLoop.maxMotion.maxAcceleration(maxAcc);//spark ID is used as the smart motion id
+        config.closedLoop.maxMotion.allowedClosedLoopError(allowedErr);//spark ID is used as the smart motion id
         spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-        //FIXME: this is deprecated
     }
 
     public void updateConstants(double kP, double kI, double kD, double kFF, double kIz, double maxVel, double maxAcc, double allowedErr){
         config.closedLoop.pidf(kP, kI, kD, kFF);
         config.closedLoop.iZone(kIz);
-        config.closedLoop.smartMotion.maxVelocity(maxVel);//spark ID is used as the smart motion id
-        config.closedLoop.smartMotion.maxAcceleration(maxAcc);//spark ID is used as the smart motion id
-        config.closedLoop.smartMotion.allowedClosedLoopError(allowedErr);//spark ID is used as the smart motion id 
+        config.closedLoop.maxMotion.maxVelocity(maxVel);//spark ID is used as the smart motion id
+        config.closedLoop.maxMotion.maxAcceleration(maxAcc);//spark ID is used as the smart motion id
+        config.closedLoop.maxMotion.allowedClosedLoopError(allowedErr);//spark ID is used as the smart motion id 
         spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-        //FIXME: also deprecated
     }
 
     public void updateSensorValues(){

@@ -40,7 +40,8 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class PhotonCameraWrapper {
 	PhotonCamera photonCamera;
-	private PhotonPoseEstimator photonPoseEstimator;
+	PhotonPoseEstimator photonPoseEstimator; //TODO: make this private again
+	// and move all the stuff from swervesubsystem into here where it's supposed to be
 
 	public PhotonCameraWrapper(String cameraName, Transform3d robotToCam) {
 		// Change the name of your camera here to whatever it is in the PhotonVision UI.
@@ -59,6 +60,10 @@ public class PhotonCameraWrapper {
 			DriverStation.reportError("Failed to load AprilTagFieldLayout", e.getStackTrace());
 			photonPoseEstimator = null;
 		}
+	}
+
+	public AprilTagFieldLayout getFieldLayout() {
+		return photonPoseEstimator.getFieldTags();
 	}
 
 	/**

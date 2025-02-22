@@ -37,7 +37,7 @@ public class ToPointCommand extends TrackPointCommand {
          * what he said was 🔥 fr - nitin
          * 
          */
-        super(swerveSubsystem, turningController, targetSupplier, null, null, ()->0.0, maxVel, maxAngularVel);
+        super(swerveSubsystem, turningController, targetSupplier, null, null, ()-> 0.0, maxVel, maxAngularVel);
         super.setXSupplier(() -> {return -calculateXSpeed(swerveSubsystem.getPose(), targetSupplier.get());});
         super.setYSupplier(() -> {return -calculateYSpeed(swerveSubsystem.getPose(), targetSupplier.get());});
         ToPointCommand.xController = xController;
