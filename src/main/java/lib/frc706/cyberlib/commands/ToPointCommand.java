@@ -79,7 +79,8 @@ public class ToPointCommand extends TrackPointCommand {
      * @return angle between the robot and the vector facing into the front of the target
      */
     private static double calculatePolarAngleTo(Pose2d currentPose, Pose2d targetPose) {
-        return currentPose.getRotation().minus(targetPose.getRotation()).minus(Rotation2d.kPi).getRadians();
+                                                                            // TODO: ?!?!?!?!?!?!?!?!?!?!??!?!
+        return currentPose.getRotation().minus(targetPose.getRotation()).minus(Rotation2d.kPi.div(3)).getRadians();
     }
 
     @Override
