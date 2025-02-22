@@ -106,77 +106,95 @@ public class SwerveSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
+        // !! MONKEY CODE !!
         for (PhotonCameraWrapper camera : cameras) {
-            PhotonPipelineResult result = camera.photonCamera.getLatestResult();
-                    camera.photonPoseEstimator.setLastPose(getPose());
-            Optional<EstimatedRobotPose> estimatedPose = camera.getEstimatedGlobalPose(getPose());
-            if (estimatedPose.isPresent() && Math.abs(getRobotRelativeSpeeds().omegaRadiansPerSecond) < 4 * Math.PI) {
-                boolean rejectUpdate = false;
-                double maxAmbiguity = 0;
-                for (var target : estimatedPose.get().targetsUsed) {
-                    if(Math.abs(target.get()) < 20) {
-                        rejectUpdate = true;
-                    }
-                    System.out.println("Skew: " + target.getSkew());
-                    double ambiguity = target.getPoseAmbiguity();
-                    if(ambiguity > 0.1)
-                        rejectUpdate = true;    
-                    else if (ambiguity > maxAmbiguity)
-                        maxAmbiguity = ambiguity;
-                    
-                    // we hate the barge tags
-                    if (target.getFiducialId() == 4 || target.getFiducialId() == 5 || target.getFiducialId() == 14 || target.getFiducialId() == 15) {
-                        rejectUpdate = true;
+            Optional<EstimatedRobotPose> result = camera.getEstimatedGlobalPose(getPose());
+            if (result.isPresent() && Math.abs(getRobotRelativeSpeeds().omegaRadiansPerSecond) < 4 * Math.PI) { 
+                double minDistance = Double.MAX_VALUE;
+                for (var target : result.get().targetsUsed) {
+                    double distance = target.getBestCameraToTarget().getTranslation().getDistance(new Translation3d());
+                    if (distance < minDistance) {
+                        minDistance = distance;
                     }
                 }
-                if(!rejectUpdate && estimatedPose.isPresent()) {
-                    swerveDrive.addVisionMeasurement(
-                        estimatedPose.get().estimatedPose.toPose2d(),
-                        result.getTimestampSeconds(),
-                        VecBuilder.fill(
-                            maxAmbiguity*20,
-                            maxAmbiguity*20,
-                            maxAmbiguity*10
-                        )
-                    );
-                }
+                minDistance *= 3;
+                swerveDrive.addVisionMeasurement(result.get().estimatedPose.toPose2d(), result.get().timestampSeconds,
+                VecBuilder.fill(minDistance, minDistance, minDistance));
             }
+        }
+        // !! MONKEY CODE !!
+
+        // for (PhotonCameraWrapper camera : cameras) {
+        //     PhotonPipelineResult result = camera.photonCamera.getLatestResult();
+        //             camera.photonPoseEstimator.setLastPose(getPose());
+        //     Optional<EstimatedRobotPose> estimatedPose = camera.getEstimatedGlobalPose(getPose());
+        //     if (estimatedPose.isPresent() && Math.abs(getRobotRelativeSpeeds().omegaRadiansPerSecond) < 4 * Math.PI) {
+        //         boolean rejectUpdate = false;
+        //         double maxAmbiguity = 0;
+        //         for (var target : estimatedPose.get().targetsUsed) {
+        //             // if(Math.abs(target.get()) < 20) {
+        //             //     rejectUpdate = true;
+        //             // }
+        //             // System.out.println("Skew: " + target.wait(0, 0););
+        //             double ambiguity = target.getPoseAmbiguity();
+        //             if(ambiguity > 0.1)
+        //                 rejectUpdate = true;    
+        //             else if (ambiguity > maxAmbiguity)
+        //                 maxAmbiguity = ambiguity;
+                    
+        //             // we hate the barge tags
+        //             if (target.getFiducialId() == 4 || target.getFiducialId() == 5 || target.getFiducialId() == 14 || target.getFiducialId() == 15) {
+        //                 rejectUpdate = true;
+        //             }
+        //         }
+        //         if(!rejectUpdate && estimatedPose.isPresent()) {
+        //             swerveDrive.addVisionMeasurement(
+        //                 estimatedPose.get().estimatedPose.toPose2d(),
+        //                 result.getTimestampSeconds(),
+        //                 VecBuilder.fill(
+        //                     maxAmbiguity*20,
+        //                     maxAmbiguity*20,
+        //                     maxAmbiguity*10
+        //                 )
+        //             );
+        //         }
+        //     }
 
             
 
-            // if (Math.abs(getRobotRelativeSpeeds().omegaRadiansPerSecond) < 4 * Math.PI || (Math.abs(getRobotRelativeSpeeds().vxMetersPerSecond) < 0.75 && Math.abs(getRobotRelativeSpeeds().vyMetersPerSecond) < 0.75)) {
-            //     camera.photonCamera.getAllUnreadResults().forEach((result) -> {
-            //         if(result.hasTargets()) {
-            //             boolean rejectUpdate = false;
-            //             double maxAmbiguity = 0;
-            //             var targets = result.getTargets();
-            //             for(var target : targets) {
-            //                 double ambiguity = target.getPoseAmbiguity();
-            //                 if(ambiguity > 0.3)
-            //                     rejectUpdate = true;    
-            //                 else if (ambiguity > maxAmbiguity)
-            //                     maxAmbiguity = ambiguity;
-            //                 // we hate the barge tags
-            //                 if (target.getFiducialId() == 4 || target.getFiducialId() == 5 || target.getFiducialId() == 14 || target.getFiducialId() == 15) {
-            //                     rejectUpdate = true;
-            //                 }
-            //             }
-            //             Optional<EstimatedRobotPose> estimatedPose = camera.photonPoseEstimator.update(result);
-            //             if(!rejectUpdate && estimatedPose.isPresent()) {
-            //                 swerveDrive.addVisionMeasurement(
-            //                     estimatedPose.get().estimatedPose.toPose2d(),
-            //                     result.getTimestampSeconds(),
-            //                     VecBuilder.fill(
-            //                         maxAmbiguity*5,
-            //                         maxAmbiguity*5,
-            //                         maxAmbiguity*5
-            //                     )
-            //                 );
-            //             }
-            //         }
-            //     });
-            // }
-        }
+        //     // if (Math.abs(getRobotRelativeSpeeds().omegaRadiansPerSecond) < 4 * Math.PI || (Math.abs(getRobotRelativeSpeeds().vxMetersPerSecond) < 0.75 && Math.abs(getRobotRelativeSpeeds().vyMetersPerSecond) < 0.75)) {
+        //     //     camera.photonCamera.getAllUnreadResults().forEach((result) -> {
+        //     //         if(result.hasTargets()) {
+        //     //             boolean rejectUpdate = false;
+        //     //             double maxAmbiguity = 0;
+        //     //             var targets = result.getTargets();
+        //     //             for(var target : targets) {
+        //     //                 double ambiguity = target.getPoseAmbiguity();
+        //     //                 if(ambiguity > 0.3)
+        //     //                     rejectUpdate = true;    
+        //     //                 else if (ambiguity > maxAmbiguity)
+        //     //                     maxAmbiguity = ambiguity;
+        //     //                 // we hate the barge tags
+        //     //                 if (target.getFiducialId() == 4 || target.getFiducialId() == 5 || target.getFiducialId() == 14 || target.getFiducialId() == 15) {
+        //     //                     rejectUpdate = true;
+        //     //                 }
+        //     //             }
+        //     //             Optional<EstimatedRobotPose> estimatedPose = camera.photonPoseEstimator.update(result);
+        //     //             if(!rejectUpdate && estimatedPose.isPresent()) {
+        //     //                 swerveDrive.addVisionMeasurement(
+        //     //                     estimatedPose.get().estimatedPose.toPose2d(),
+        //     //                     result.getTimestampSeconds(),
+        //     //                     VecBuilder.fill(
+        //     //                         maxAmbiguity*5,
+        //     //                         maxAmbiguity*5,
+        //     //                         maxAmbiguity*5
+        //     //                     )
+        //     //                 );
+        //     //             }
+        //     //         }
+        //     //     });
+        //     // }
+        // }
         Logger.recordOutput(getName() + "/Robot Pose", getPose());
         if (swerveDrive.getPose() == Pose2d.kZero) {
             poseAlert.set(true);
