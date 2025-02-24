@@ -27,16 +27,17 @@ public class ToTagCommand extends Command {
         double xSpeed = 0;
         double ySpeed;
         double turningSpeed;
-        double kPturning = 1;
+        double kPturning = 2;
         double KpDistance = 2;
         double distance =  LimelightHelpers.getTargetPose3d_RobotSpace(name).getZ();
         double desiredDistance = 0.5;
-        double distance_error = distance-desiredDistance;
+        double distance_error = distance - desiredDistance;
 
         //Set turning speed and y speed based off of apriltag
         ySpeed = 0;
-        turningSpeed = kPturning * LimelightHelpers.getTargetPose3d_RobotSpace(name).getX();
-        xSpeed = LimelightHelpers.getTV(name) ? MathUtil.clamp(KpDistance*distance_error, -3, 3) : 0;
+        turningSpeed = -kPturning * (LimelightHelpers.getTargetPose3d_RobotSpace(name).getY());
+        turningSpeed = LimelightHelpers.getTV(name) ? -kPturning * (LimelightHelpers.getTargetPose3d_CameraSpace(name).getRotation().getAngle()) : 0;
+        xSpeed = 0; //LimelightHelpers.getTV(name) ? MathUtil.clamp(KpDistance * distance_error, -3, 3) : 0;
         
         //Output each module states to wheels
         swerveSubsystem.driveRobotOriented(swerveSubsystem.swerveDrive.swerveController.getRawTargetSpeeds(xSpeed, ySpeed, turningSpeed));

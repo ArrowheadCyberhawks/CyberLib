@@ -65,12 +65,25 @@ public class ToPointCommand extends TrackPointCommand {
         }
     }
 
+    /**
+     * Calculates the horizontal speed of the robot around a circle centered at the target pose 
+     * such that the robot will lie on the line normal to the face of the target
+     * 
+     * @param currentPose current pose of the robot
+     * @param targetPose pose of the apriltag (or whatever else we want to point towards)
+     */
     private double calculateXSpeed(Pose2d currentPose, Pose2d targetPose) {
-        return xController.calculate(calculatePolarAngleTo(currentPose, targetPose), 0)/(Math.abs(TrackPointCommand.calculateAngleTo(currentPose, targetPose))+1);
+        double thetaError = calculatePolarAngleTo(currentPose, targetPose); // get the distance we need to travel around the circle
+        double xSpeed = xController.calculate(thetaError, 0); // calculate the speed we need to travel with PID
+        xSpeed /= (Math.abs(TrackPointCommand.calculateAngleTo(currentPose, targetPose))+1); // slow down if we're not facing the target
+        return xSpeed;
     }
 
     private double calculateYSpeed(Pose2d currentPose, Pose2d targetPose) {
-        return yController.calculate(currentPose.getTranslation().getDistance(targetPose.getTranslation()), desiredDistance)/(Math.abs(TrackPointCommand.calculateAngleTo(currentPose, targetPose))+1);
+        double distance = currentPose.getTranslation().getDistance(targetPose.getTranslation()); // get the distance from the target
+        double ySpeed = yController.calculate(distance, desiredDistance); // calculate the speed we need to travel with PID
+        ySpeed /= (Math.abs(TrackPointCommand.calculateAngleTo(currentPose, targetPose))+1); // slow down if we're not facing the target
+        return ySpeed;
     }
     /**
      * Calculates the angle to point the robot towards the target
@@ -79,12 +92,14 @@ public class ToPointCommand extends TrackPointCommand {
      * @return angle between the robot and the vector facing into the front of the target
      */
     private static double calculatePolarAngleTo(Pose2d currentPose, Pose2d targetPose) {
-                                                                            // TODO: ?!?!?!?!?!?!?!?!?!?!??!?!
-        return currentPose.getRotation().minus(targetPose.getRotation()).minus(Rotation2d.fromDegrees(69)).getRadians();
+        Rotation2d thetaError = currentPose.getRotation().minus(targetPose.getRotation());
+                        // TODO: ?!?!?!?!?!?!?!?!?!?!??!?!
+        return thetaError.minus(Rotation2d.fromDegrees(69)).getRadians();
     }
 
     @Override
     public void initialize() {
+        
     }
 
     @Override
