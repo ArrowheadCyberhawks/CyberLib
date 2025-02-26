@@ -1,6 +1,8 @@
 package lib.frc706.cyberlib.commands;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj2.command.Command;
 import lib.frc706.cyberlib.subsystems.LimelightHelpers;
 import lib.frc706.cyberlib.subsystems.SwerveSubsystem;
@@ -35,9 +37,11 @@ public class ToTagCommand extends Command {
 
         //Set turning speed and y speed based off of apriltag
         ySpeed = 0;
-        turningSpeed = -kPturning * (LimelightHelpers.getTargetPose3d_RobotSpace(name).getY());
-        turningSpeed = LimelightHelpers.getTV(name) ? -kPturning * (LimelightHelpers.getTargetPose3d_CameraSpace(name).getRotation().getAngle()) : 0;
-        xSpeed = 0; //LimelightHelpers.getTV(name) ? MathUtil.clamp(KpDistance * distance_error, -3, 3) : 0;
+        turningSpeed = LimelightHelpers.getTV(name) ? -kPturning * LimelightHelpers.getTargetPose3d_RobotSpace(name).getY() : 0;
+
+        //knack code which will 100% work
+        turningSpeed = -kPturning * LimelightHelpers.getTargetPose3d_RobotSpace("limelight").getX();
+        xSpeed = LimelightHelpers.getTV(name) ? MathUtil.clamp(KpDistance * distance_error, -3, 3) : 0;
         
         //Output each module states to wheels
         swerveSubsystem.driveRobotOriented(swerveSubsystem.swerveDrive.swerveController.getRawTargetSpeeds(xSpeed, ySpeed, turningSpeed));
