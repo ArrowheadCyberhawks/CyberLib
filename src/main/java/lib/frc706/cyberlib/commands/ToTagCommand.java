@@ -26,22 +26,33 @@ public class ToTagCommand extends Command {
     @Override
     public void execute() {
         //Figure out distance and angle to apriltag
-        double xSpeed = 0;
+        double xSpeed;
         double ySpeed;
         double turningSpeed;
+
         double kPturning = 2;
         double KpDistance = 2;
-        double distance =  LimelightHelpers.getTargetPose3d_RobotSpace(name).getZ();
-        double desiredDistance = 0.5;
-        double distance_error = distance - desiredDistance;
+        //distance to apriltag
+        double xDistance =  LimelightHelpers.getTargetPose3d_RobotSpace(name).getZ();
+        double yDistance = LimelightHelpers.getTargetPose3d_RobotSpace(name).getX();
+        boolean seeingTag = LimelightHelpers.getTV(name);
+        //offsets
+        double xOffset = 0.5;
+        double yOffset = 0.1;
+        double xDistanceError = xDistance - xOffset;
+        double yDistanceError = yDistance - yOffset;
 
         //Set turning speed and y speed based off of apriltag
+        xSpeed = 0;
         ySpeed = 0;
-        turningSpeed = LimelightHelpers.getTV(name) ? -kPturning * LimelightHelpers.getTargetPose3d_RobotSpace(name).getY() : 0;
+        turningSpeed = seeingTag ? -kPturning * LimelightHelpers.getTargetPose3d_RobotSpace(name).getY() : 0;
 
         //knack code which will 100% work
-        turningSpeed = -kPturning * LimelightHelpers.getTargetPose3d_RobotSpace("limelight").getX();
-        xSpeed = LimelightHelpers.getTV(name) ? MathUtil.clamp(KpDistance * distance_error, -3, 3) : 0;
+        // turningSpeed = -kPturning * LimelightHelpers.getTargetPose3d_RobotSpace(name).getX(); THIS ONE POINTS AT A TAG
+
+        //turningSpeed = seeingTag ? -kpTurning * LimelightHelpers.getTargetPose3d_RobotSpace(name). : 0;
+        ySpeed = seeingTag ? MathUtil.clamp(KpDistance * yDistanceError, -3, 3) : 0;
+        xSpeed = seeingTag ? MathUtil.clamp(KpDistance * xDistanceError, -3, 3) : 0;
         
         //Output each module states to wheels
         swerveSubsystem.driveRobotOriented(swerveSubsystem.swerveDrive.swerveController.getRawTargetSpeeds(xSpeed, ySpeed, turningSpeed));

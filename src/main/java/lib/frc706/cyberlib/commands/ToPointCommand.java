@@ -16,20 +16,20 @@ public class ToPointCommand extends Command {
     private final SwerveSubsystem swerveSubsystem;
 
     private ProfiledPIDController xController, yController, thetaController;
-    private final LoggedNetworkNumber kPDrive = new LoggedNetworkNumber(getName() + "/kPDrive", 0.5);
+    private final LoggedNetworkNumber kPDrive = new LoggedNetworkNumber(getName() + "/kPDrive", 5);
     private final LoggedNetworkNumber kDDrive = new LoggedNetworkNumber(getName() + "/kDDrive", 0);
 
-    private final LoggedNetworkNumber kPTheta = new LoggedNetworkNumber(getName() + "/kPTheta", 0.5);
+    private final LoggedNetworkNumber kPTheta = new LoggedNetworkNumber(getName() + "/kPTheta", 5);
     private final LoggedNetworkNumber kDTheta = new LoggedNetworkNumber(getName() + "/kDTheta", 0);
 
     private final LoggedNetworkNumber kDriveMaxVel = new LoggedNetworkNumber(getName() + "/kPDriveVel", 1);
     private final LoggedNetworkNumber kDriveMaxAccel = new LoggedNetworkNumber(getName() + "/kPDriveAccel", 1);
 
-    private final LoggedNetworkNumber kThetaMaxVel = new LoggedNetworkNumber(getName() + "/kThetaMaxVel", 1);
-    private final LoggedNetworkNumber kThetaMaxAccel = new LoggedNetworkNumber(getName() + "/kThetaMaxAccel", 1);
+    private final LoggedNetworkNumber kThetaMaxVel = new LoggedNetworkNumber(getName() + "/kThetaMaxVel", Math.PI);
+    private final LoggedNetworkNumber kThetaMaxAccel = new LoggedNetworkNumber(getName() + "/kThetaMaxAccel", 2 * Math.PI);
 
-    private final LoggedNetworkNumber kDriveTolerance = new LoggedNetworkNumber(getName() + "/kDriveTolerance", 0.1);
-    private final LoggedNetworkNumber kThetaTolerance = new LoggedNetworkNumber(getName() + "/kThetaTolerance", 0.1);
+    private final LoggedNetworkNumber kDriveTolerance = new LoggedNetworkNumber(getName() + "/kDriveTolerance", 0.01);
+    private final LoggedNetworkNumber kThetaTolerance = new LoggedNetworkNumber(getName() + "/kThetaTolerance", 0.01);
 
     private Supplier<Pose2d> targetSupplier;
 
@@ -55,9 +55,6 @@ public class ToPointCommand extends Command {
         thetaController.setTolerance(kThetaTolerance.get());
 
         // advantagekit stuff
-        Logger.recordOutput(getName() + "/xSetpoint", xController.getSetpoint().position);
-        Logger.recordOutput(getName() + "/ySetpoint", yController.getSetpoint().position);
-        Logger.recordOutput(getName() + "/thetaSetpoint", thetaController.getSetpoint().position);
 
         addRequirements(swerveSubsystem);
     }
@@ -76,13 +73,16 @@ public class ToPointCommand extends Command {
         if (targetPose.getRotation().getRadians() != thetaController.getGoal().position) {
             thetaController.setGoal(targetPose.getRotation().getRadians());
         }
-        double xSpeed = xController.calculate(-currentPose.getX());
-        double ySpeed = yController.calculate(-currentPose.getY());
+        double xSpeed = xController.calculate(currentPose.getX());
+        double ySpeed = yController.calculate(currentPose.getY());
         double thetaSpeed = thetaController.calculate(currentPose.getRotation().getRadians());
         ChassisSpeeds speeds = new ChassisSpeeds(xSpeed, ySpeed, thetaSpeed);
         swerveSubsystem.driveFieldOriented(speeds);
 
         // more advantagekit stuff
+        Logger.recordOutput(getName() + "/xSetpoint", xController.getSetpoint().position);
+        Logger.recordOutput(getName() + "/ySetpoint", yController.getSetpoint().position);
+        Logger.recordOutput(getName() + "/thetaSetpoint", thetaController.getSetpoint().position);
         Logger.recordOutput(getName() + "/xSpeed", xSpeed);
         Logger.recordOutput(getName() + "/ySpeed", ySpeed);
         Logger.recordOutput(getName() + "/thetaSpeed", thetaSpeed);
@@ -91,6 +91,14 @@ public class ToPointCommand extends Command {
         Logger.recordOutput(getName() + "/thetaError", thetaController.getPositionError());
         Logger.recordOutput(getName() + "/targetPose", targetPose);
         Logger.recordOutput(getName() + "/currentPose", currentPose);
+        Logger.recordOutput(getName() + "/realXError", targetPose.getX() - currentPose.getX());
+        Logger.recordOutput(getName() + "/realYError", targetPose.getY() - currentPose.getY());
+        Logger.recordOutput(getName() + "/xGoal", xController.getGoal().position);
+        Logger.recordOutput(getName() + "/yGoal", yController.getGoal().position);
+        Logger.recordOutput(getName() + "/thetaGoal", thetaController.getGoal().position);
+        Logger.recordOutput(getName() + "/xPosition", currentPose.getX());
+        Logger.recordOutput(getName() + "/yPosition", currentPose.getY());
+        Logger.recordOutput(getName() + "/thetaPosition", currentPose.getRotation().getRadians());
     }
 
     @Override
@@ -98,9 +106,18 @@ public class ToPointCommand extends Command {
         if (targetSupplier == null) {
            return;
         }
+        xController = new ProfiledPIDController(kPDrive.get(), 0, kDDrive.get(), new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
+        yController = new ProfiledPIDController(kPDrive.get(), 0, kDDrive.get(), new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
+        thetaController = new ProfiledPIDController(kPTheta.get(), 0, kDTheta.get(), new Constraints(kThetaMaxVel.get(), kThetaMaxAccel.get()));
+        xController.setTolerance(kDriveTolerance.get());
+        yController.setTolerance(kDriveTolerance.get());
+        thetaController.setTolerance(kThetaTolerance.get());
         xController.setGoal(targetSupplier.get().getX());
         yController.setGoal(targetSupplier.get().getY());
         thetaController.setGoal(targetSupplier.get().getRotation().getRadians());
+        xController.reset(swerveSubsystem.getPose().getX());
+        yController.reset(swerveSubsystem.getPose().getY());
+        thetaController.reset(swerveSubsystem.getPose().getRotation().getRadians());
     }
 
     /**
