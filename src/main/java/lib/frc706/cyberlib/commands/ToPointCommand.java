@@ -16,20 +16,17 @@ public class ToPointCommand extends Command {
     private final SwerveSubsystem swerveSubsystem;
 
     private ProfiledPIDController xController, yController, thetaController;
-    private final LoggedNetworkNumber kPDrive = new LoggedNetworkNumber(getName() + "/kPDrive", 5);
-    private final LoggedNetworkNumber kDDrive = new LoggedNetworkNumber(getName() + "/kDDrive", 0);
+    private final LoggedNetworkNumber kPDrive = new LoggedNetworkNumber("ToPoint/kPDrive", 5);
+    private final LoggedNetworkNumber kPTheta = new LoggedNetworkNumber("ToPoint/kPTheta", 5);
 
-    private final LoggedNetworkNumber kPTheta = new LoggedNetworkNumber(getName() + "/kPTheta", 5);
-    private final LoggedNetworkNumber kDTheta = new LoggedNetworkNumber(getName() + "/kDTheta", 0);
+    private final LoggedNetworkNumber kDriveMaxVel = new LoggedNetworkNumber("ToPoint/kDriveMaxVel", 1);
+    private final LoggedNetworkNumber kDriveMaxAccel = new LoggedNetworkNumber("ToPoint/kDriveMaxAccel", 1);
 
-    private final LoggedNetworkNumber kDriveMaxVel = new LoggedNetworkNumber(getName() + "/kPDriveVel", 1);
-    private final LoggedNetworkNumber kDriveMaxAccel = new LoggedNetworkNumber(getName() + "/kPDriveAccel", 1);
+    private final LoggedNetworkNumber kThetaMaxVel = new LoggedNetworkNumber("ToPoint/kThetaMaxVel", Math.PI);
+    private final LoggedNetworkNumber kThetaMaxAccel = new LoggedNetworkNumber("ToPoint/kThetaMaxAccel", 2 * Math.PI);
 
-    private final LoggedNetworkNumber kThetaMaxVel = new LoggedNetworkNumber(getName() + "/kThetaMaxVel", Math.PI);
-    private final LoggedNetworkNumber kThetaMaxAccel = new LoggedNetworkNumber(getName() + "/kThetaMaxAccel", 2 * Math.PI);
-
-    private final LoggedNetworkNumber kDriveTolerance = new LoggedNetworkNumber(getName() + "/kDriveTolerance", 0.01);
-    private final LoggedNetworkNumber kThetaTolerance = new LoggedNetworkNumber(getName() + "/kThetaTolerance", 0.01);
+    private final LoggedNetworkNumber kDriveTolerance = new LoggedNetworkNumber("ToPoint/kDriveTolerance", 0.01);
+    private final LoggedNetworkNumber kThetaTolerance = new LoggedNetworkNumber("ToPoint/kThetaTolerance", 0.01);
 
     private Supplier<Pose2d> targetSupplier;
 
@@ -47,9 +44,9 @@ public class ToPointCommand extends Command {
         this.targetSupplier = targetSupplier;
 
         //set up PID controllers
-        xController = new ProfiledPIDController(kPDrive.get(), 0, kDDrive.get(), new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
-        yController = new ProfiledPIDController(kPDrive.get(), 0, kDDrive.get(), new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
-        thetaController = new ProfiledPIDController(kPTheta.get(), 0, kDTheta.get(), new Constraints(kThetaMaxVel.get(), kThetaMaxAccel.get()));
+        xController = new ProfiledPIDController(kPDrive.get(), 0, 0, new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
+        yController = new ProfiledPIDController(kPDrive.get(), 0, 0, new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
+        thetaController = new ProfiledPIDController(kPTheta.get(), 0, 0, new Constraints(kThetaMaxVel.get(), kThetaMaxAccel.get()));
         xController.setTolerance(kDriveTolerance.get());
         yController.setTolerance(kDriveTolerance.get());
         thetaController.setTolerance(kThetaTolerance.get());
@@ -106,9 +103,9 @@ public class ToPointCommand extends Command {
         if (targetSupplier == null) {
            return;
         }
-        xController = new ProfiledPIDController(kPDrive.get(), 0, kDDrive.get(), new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
-        yController = new ProfiledPIDController(kPDrive.get(), 0, kDDrive.get(), new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
-        thetaController = new ProfiledPIDController(kPTheta.get(), 0, kDTheta.get(), new Constraints(kThetaMaxVel.get(), kThetaMaxAccel.get()));
+        xController = new ProfiledPIDController(kPDrive.get(), 0, 0, new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
+        yController = new ProfiledPIDController(kPDrive.get(), 0, 0, new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
+        thetaController = new ProfiledPIDController(kPTheta.get(), 0, 0, new Constraints(kThetaMaxVel.get(), kThetaMaxAccel.get()));
         xController.setTolerance(kDriveTolerance.get());
         yController.setTolerance(kDriveTolerance.get());
         thetaController.setTolerance(kThetaTolerance.get());
@@ -125,9 +122,9 @@ public class ToPointCommand extends Command {
      */
     private void updateConstants() {
             // absolute unit of an if statement
-        if (xController.getP() != kPDrive.get() || xController.getD() != kDDrive.get() || 
-            yController.getP() != kPDrive.get() || yController.getD() != kDDrive.get() || 
-            thetaController.getP() != kPTheta.get() || thetaController.getD() != kDTheta.get() || 
+        if (xController.getP() != kPDrive.get() ||
+            yController.getP() != kPDrive.get() ||
+            thetaController.getP() != kPTheta.get() || 
             !xController.getConstraints().equals(new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get())) || 
             !yController.getConstraints().equals(new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get())) || 
             !thetaController.getConstraints().equals(new Constraints(kThetaMaxVel.get(), kThetaMaxAccel.get())) || 
@@ -136,11 +133,8 @@ public class ToPointCommand extends Command {
             thetaController.getPositionTolerance() != kThetaTolerance.get()) {
 
             xController.setP(kPDrive.get());
-            xController.setD(kDDrive.get());
             yController.setP(kPDrive.get());
-            yController.setD(kDDrive.get());
             thetaController.setP(kPTheta.get());
-            thetaController.setD(kDTheta.get());
 
             Constraints driveConstraints = new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get());
             xController.setConstraints(driveConstraints);
