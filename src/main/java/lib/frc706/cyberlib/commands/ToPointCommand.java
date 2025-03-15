@@ -18,12 +18,12 @@ public class ToPointCommand extends Command {
     private final SwerveSubsystem swerveSubsystem;
 
     private ProfiledPIDController xController, yController, thetaController;
-    private final LoggedNetworkNumber kPDrive = new LoggedNetworkNumber("ToPoint/kPDrive", 5);
+    private final LoggedNetworkNumber kPDrive = new LoggedNetworkNumber("ToPoint/kPDrive", 3);
     private final LoggedNetworkNumber kPTheta = new LoggedNetworkNumber("ToPoint/kPTheta", 5);
 
     private final LoggedNetworkNumber kIDrive = new LoggedNetworkNumber("ToPoint/kIDrive", 0);
 
-    private final LoggedNetworkNumber kDDrive = new LoggedNetworkNumber("ToPoint/kDDrive", 0.1);
+    private final LoggedNetworkNumber kDDrive = new LoggedNetworkNumber("ToPoint/kDDrive", 0.01);
 
     private final LoggedNetworkNumber kDriveMaxVel = new LoggedNetworkNumber("ToPoint/kDriveMaxVel", 0.5);
     private final LoggedNetworkNumber kDriveMaxAccel = new LoggedNetworkNumber("ToPoint/kDriveMaxAccel", 1);
