@@ -51,17 +51,17 @@ public class ToTagCommand extends Command {
             tagPose2d = new Pose2d();
         }
         
-        double kPturning = 0.2;
-        double KpDistance = 1;
+        double kPturning = 1;
+        double KpDistance = 2;
         //distance to apriltag
-        double xDistance =  LimelightHelpers.getTargetPose3d_RobotSpace(name).getY();
-        double yDistance = LimelightHelpers.getTargetPose3d_RobotSpace(name).getX();
+        double xDistance = -LimelightHelpers.getTargetPose3d_RobotSpace(name).getY();
+        double yDistance = -LimelightHelpers.getTargetPose3d_RobotSpace(name).getX();
 
         //offsets
-        double xOffset = 0.8;
-        double yOffset = 0.8;
+        double xOffset = 0.25;
+        double yOffset = 0.25;
 
-        double xDistanceError = xDistance - xOffset;
+        double xDistanceError = xDistance;
         double yDistanceError = yDistance - yOffset;
 
         //knack code which will 100% work
@@ -72,7 +72,7 @@ public class ToTagCommand extends Command {
 
         ySpeed = seeingTag ? MathUtil.clamp(KpDistance * yDistanceError, -3, 3) : 0;
         xSpeed = seeingTag ? MathUtil.clamp(KpDistance * xDistanceError, -3, 3) : 0;
-        turningSpeed = seeingTag ? (tagPose2d.getRotation().getRadians() - swerveSubsystem.getPose().getRotation().getRadians() - Math.PI) * kPturning : 0;
+        turningSpeed = seeingTag ? (tagPose2d.getRotation().getRadians() - LimelightHelpers.getBotPose2d_wpiBlue("limelight").getRotation().getRadians() - Math.PI) * kPturning : 0;
 
         //xSpeed = 0;
         //ySpeed = 0;
@@ -83,6 +83,8 @@ public class ToTagCommand extends Command {
 
         Logger.recordOutput(getName() + "/xSpeed", xSpeed);
         Logger.recordOutput(getName() + "/ySpeed", ySpeed);
+        Logger.recordOutput(getName() + "/xDistance", xDistance);
+        Logger.recordOutput(getName() + "/yDistance", yDistance);
         Logger.recordOutput(getName() + "/turningSpeed", turningSpeed);
         Logger.recordOutput(getName() + "/tagId", tagId);
         Logger.recordOutput(getName() + "/tagPose", tagPose2d.getRotation().getRadians());

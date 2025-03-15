@@ -29,7 +29,11 @@ import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Filesystem;
+
+import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.List;
 import org.photonvision.EstimatedRobotPose;
@@ -49,12 +53,12 @@ public class PhotonCameraWrapper {
 		try {
 			// Attempt to load the AprilTagFieldLayout that will tell us where the tags are
 			// on the field.
-			AprilTagFieldLayout fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
+			AprilTagFieldLayout fieldLayout = new AprilTagFieldLayout(Filesystem.getDeployDirectory().toPath().resolve(Path.of("2025-reefscape-welded-nobarge.json")));
 			// Create pose estimator
 			photonPoseEstimator = new PhotonPoseEstimator(fieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, robotToCam);
 			photonPoseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
 			
-		} catch (UncheckedIOException e) {
+		} catch (IOException e) {
 			// The AprilTagFieldLayout failed to load. We won't be able to estimate poses if
 			// we don't know where the tags are.
 			DriverStation.reportError("Failed to load AprilTagFieldLayout", e.getStackTrace());
