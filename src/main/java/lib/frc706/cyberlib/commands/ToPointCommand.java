@@ -4,7 +4,9 @@ import java.util.function.Supplier;
 
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import lib.frc706.cyberlib.subsystems.SwerveSubsystem;
@@ -19,13 +21,17 @@ public class ToPointCommand extends Command {
     private final LoggedNetworkNumber kPDrive = new LoggedNetworkNumber("ToPoint/kPDrive", 5);
     private final LoggedNetworkNumber kPTheta = new LoggedNetworkNumber("ToPoint/kPTheta", 5);
 
-    private final LoggedNetworkNumber kDriveMaxVel = new LoggedNetworkNumber("ToPoint/kDriveMaxVel", 1);
+    private final LoggedNetworkNumber kIDrive = new LoggedNetworkNumber("ToPoint/kIDrive", 0);
+
+    private final LoggedNetworkNumber kDDrive = new LoggedNetworkNumber("ToPoint/kDDrive", 0.1);
+
+    private final LoggedNetworkNumber kDriveMaxVel = new LoggedNetworkNumber("ToPoint/kDriveMaxVel", 0.5);
     private final LoggedNetworkNumber kDriveMaxAccel = new LoggedNetworkNumber("ToPoint/kDriveMaxAccel", 1);
 
     private final LoggedNetworkNumber kThetaMaxVel = new LoggedNetworkNumber("ToPoint/kThetaMaxVel", Math.PI);
     private final LoggedNetworkNumber kThetaMaxAccel = new LoggedNetworkNumber("ToPoint/kThetaMaxAccel", 2 * Math.PI);
 
-    private final LoggedNetworkNumber kDriveTolerance = new LoggedNetworkNumber("ToPoint/kDriveTolerance", 0.01);
+    private final LoggedNetworkNumber kDriveTolerance = new LoggedNetworkNumber("ToPoint/kDriveTolerance", 0.000001);
     private final LoggedNetworkNumber kThetaTolerance = new LoggedNetworkNumber("ToPoint/kThetaTolerance", 0.01);
 
     private Supplier<Pose2d> targetSupplier;
@@ -44,8 +50,8 @@ public class ToPointCommand extends Command {
         this.targetSupplier = targetSupplier;
 
         //set up PID controllers
-        xController = new ProfiledPIDController(kPDrive.get(), 0, 0, new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
-        yController = new ProfiledPIDController(kPDrive.get(), 0, 0, new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
+        xController = new ProfiledPIDController(kPDrive.get(), kIDrive.get(), kDDrive.get(), new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
+        yController = new ProfiledPIDController(kPDrive.get(), kIDrive.get(), kDDrive.get(), new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
         thetaController = new ProfiledPIDController(kPTheta.get(), 0, 0, new Constraints(kThetaMaxVel.get(), kThetaMaxAccel.get()));
         xController.setTolerance(kDriveTolerance.get());
         yController.setTolerance(kDriveTolerance.get());
@@ -59,7 +65,12 @@ public class ToPointCommand extends Command {
     @Override
     public void execute() {
         updateConstants();
-        Pose2d currentPose = swerveSubsystem.getPose();
+        // Pose2d currentPose = swerveSubsystem.getPose();
+        Double[] poseArray = SmartDashboard.getNumberArray("Field/Robot", new Double[] {0.0, 0.0, 0.0});
+        Pose2d currentPose = new Pose2d(poseArray[0], poseArray[1], Rotation2d.fromDegrees(poseArray[2]));
+        Logger.recordOutput(getName() + "/xPosition", currentPose.getX());
+        Logger.recordOutput(getName() + "/yPosition", currentPose.getY());
+        Logger.recordOutput(getName() + "/thetaPosition", currentPose.getRotation().getRadians());
         Pose2d targetPose = targetSupplier.get();
         if (targetPose.getX() != xController.getGoal().position) {
             xController.setGoal(targetPose.getX());
@@ -93,9 +104,6 @@ public class ToPointCommand extends Command {
         Logger.recordOutput(getName() + "/xGoal", xController.getGoal().position);
         Logger.recordOutput(getName() + "/yGoal", yController.getGoal().position);
         Logger.recordOutput(getName() + "/thetaGoal", thetaController.getGoal().position);
-        Logger.recordOutput(getName() + "/xPosition", currentPose.getX());
-        Logger.recordOutput(getName() + "/yPosition", currentPose.getY());
-        Logger.recordOutput(getName() + "/thetaPosition", currentPose.getRotation().getRadians());
     }
 
     @Override
@@ -103,8 +111,8 @@ public class ToPointCommand extends Command {
         if (targetSupplier == null) {
            return;
         }
-        xController = new ProfiledPIDController(kPDrive.get(), 0, 0, new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
-        yController = new ProfiledPIDController(kPDrive.get(), 0, 0, new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
+        xController = new ProfiledPIDController(kPDrive.get(), kIDrive.get(), kDDrive.get(), new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
+        yController = new ProfiledPIDController(kPDrive.get(), kIDrive.get(), kDDrive.get(), new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
         thetaController = new ProfiledPIDController(kPTheta.get(), 0, 0, new Constraints(kThetaMaxVel.get(), kThetaMaxAccel.get()));
         xController.setTolerance(kDriveTolerance.get());
         yController.setTolerance(kDriveTolerance.get());
@@ -124,6 +132,10 @@ public class ToPointCommand extends Command {
             // absolute unit of an if statement
         if (xController.getP() != kPDrive.get() ||
             yController.getP() != kPDrive.get() ||
+            xController.getI() != kIDrive.get() ||
+            yController.getI() != kIDrive.get() ||
+            xController.getD() != kDDrive.get() ||
+            yController.getD() != kDDrive.get() ||
             thetaController.getP() != kPTheta.get() || 
             !xController.getConstraints().equals(new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get())) || 
             !yController.getConstraints().equals(new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get())) || 
@@ -135,6 +147,12 @@ public class ToPointCommand extends Command {
             xController.setP(kPDrive.get());
             yController.setP(kPDrive.get());
             thetaController.setP(kPTheta.get());
+
+            xController.setI(kIDrive.get());
+            yController.setI(kIDrive.get());
+
+            xController.setD(kDDrive.get());
+            yController.setD(kDDrive.get());
 
             Constraints driveConstraints = new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get());
             xController.setConstraints(driveConstraints);
