@@ -43,8 +43,8 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class PhotonCameraWrapper {
-	PhotonCamera photonCamera;
-	PhotonPoseEstimator photonPoseEstimator; //TODO: make this private again
+	public PhotonCamera photonCamera;
+	public PhotonPoseEstimator photonPoseEstimator; //TODO: make this private again
 	// and move all the stuff from swervesubsystem into here where it's supposed to be
 
 	public PhotonCameraWrapper(String cameraName, Transform3d robotToCam) {
@@ -53,7 +53,7 @@ public class PhotonCameraWrapper {
 		try {
 			// Attempt to load the AprilTagFieldLayout that will tell us where the tags are
 			// on the field.
-			AprilTagFieldLayout fieldLayout = new AprilTagFieldLayout(Filesystem.getDeployDirectory().toPath().resolve(Path.of("2025-reefscape-welded-nobarge.json")));
+			AprilTagFieldLayout fieldLayout = new AprilTagFieldLayout(Filesystem.getDeployDirectory().toPath().resolve(Path.of("2025-reefscape-welded-nobarge.json"))); //TODO: REMOVE season-specific garbage
 			// Create pose estimator
 			photonPoseEstimator = new PhotonPoseEstimator(fieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, robotToCam);
 			photonPoseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);

@@ -23,7 +23,7 @@ public class ToPointCommand extends Command {
 
     private final LoggedNetworkNumber kIDrive = new LoggedNetworkNumber("ToPoint/kIDrive", 0);
 
-    private final LoggedNetworkNumber kDDrive = new LoggedNetworkNumber("ToPoint/kDDrive", 0.01);
+    private final LoggedNetworkNumber kDDrive = new LoggedNetworkNumber("ToPoint/kDDrive", 0);//0.01
 
     private final LoggedNetworkNumber kDriveMaxVel = new LoggedNetworkNumber("ToPoint/kDriveMaxVel", 0.5);
     private final LoggedNetworkNumber kDriveMaxAccel = new LoggedNetworkNumber("ToPoint/kDriveMaxAccel", 1);
@@ -108,9 +108,6 @@ public class ToPointCommand extends Command {
 
     @Override
     public void initialize() {
-        if (targetSupplier == null) {
-           return;
-        }
         xController = new ProfiledPIDController(kPDrive.get(), kIDrive.get(), kDDrive.get(), new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
         yController = new ProfiledPIDController(kPDrive.get(), kIDrive.get(), kDDrive.get(), new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
         thetaController = new ProfiledPIDController(kPTheta.get(), 0, 0, new Constraints(kThetaMaxVel.get(), kThetaMaxAccel.get()));
@@ -123,6 +120,9 @@ public class ToPointCommand extends Command {
         xController.reset(swerveSubsystem.getPose().getX());
         yController.reset(swerveSubsystem.getPose().getY());
         thetaController.reset(swerveSubsystem.getPose().getRotation().getRadians());
+        if (targetSupplier == null) {
+           return;
+        }
     }
 
     /**
@@ -170,6 +170,10 @@ public class ToPointCommand extends Command {
     @Override
     public void end(boolean interrupted) {
         swerveSubsystem.stopModules();
+        
+        xController = new ProfiledPIDController(kPDrive.get(), kIDrive.get(), kDDrive.get(), new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
+        yController = new ProfiledPIDController(kPDrive.get(), kIDrive.get(), kDDrive.get(), new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
+        thetaController = new ProfiledPIDController(kPTheta.get(), 0, 0, new Constraints(kThetaMaxVel.get(), kThetaMaxAccel.get()));
     }
 
     @Override
