@@ -24,7 +24,7 @@ public class ToPointCommand extends Command {
 
     private final LoggedNetworkNumber kIDrive = new LoggedNetworkNumber("ToPoint/kIDrive", 0);
 
-    private final LoggedNetworkNumber kDDrive = new LoggedNetworkNumber("ToPoint/kDDrive", 0);//0.01
+    private final LoggedNetworkNumber kDDrive = new LoggedNetworkNumber("ToPoint/kDDrive", 0.05);//0.01
 
     private final LoggedNetworkNumber kDriveMaxVel = new LoggedNetworkNumber("ToPoint/kDriveMaxVel", 0.5);
     private final LoggedNetworkNumber kDriveMaxAccel = new LoggedNetworkNumber("ToPoint/kDriveMaxAccel", 1);
@@ -65,7 +65,7 @@ public class ToPointCommand extends Command {
 
     @Override
     public void execute() {
-        updateConstants();
+        // updateConstants();
         // Pose2d currentPose = swerveSubsystem.getPose();
         Double[] poseArray = SmartDashboard.getNumberArray("Field/Robot", new Double[] {0.0, 0.0, 0.0});
         Pose2d currentPose = new Pose2d(poseArray[0], poseArray[1], Rotation2d.fromDegrees(poseArray[2]));
@@ -86,7 +86,7 @@ public class ToPointCommand extends Command {
         double ySpeed = MathUtil.clamp(yController.calculate(currentPose.getY()), -kDriveMaxVel.get(), kDriveMaxVel.get());
         double thetaSpeed = MathUtil.clamp(thetaController.calculate(currentPose.getRotation().getRadians()), -kThetaMaxVel.get(), kThetaMaxVel.get());
         ChassisSpeeds speeds = new ChassisSpeeds(xSpeed, ySpeed, thetaSpeed);
-        swerveSubsystem.driveFieldOriented(speeds);
+        swerveSubsystem.swerveDrive.driveFieldOriented(speeds);
 
         // more advantagekit stuff
         Logger.recordOutput(getName() + "/xSetpoint", xController.getSetpoint());
