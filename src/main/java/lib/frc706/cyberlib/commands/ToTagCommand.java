@@ -81,14 +81,14 @@ public class ToTagCommand extends Command {
         //Output each module states to wheels
         swerveSubsystem.driveRobotOriented(swerveSubsystem.swerveDrive.swerveController.getRawTargetSpeeds(xSpeed, ySpeed, turningSpeed));
 
-        Logger.recordOutput(getName() + "/xSpeed", xSpeed);
-        Logger.recordOutput(getName() + "/ySpeed", ySpeed);
-        Logger.recordOutput(getName() + "/xDistance", xDistance);
-        Logger.recordOutput(getName() + "/yDistance", yDistance);
-        Logger.recordOutput(getName() + "/turningSpeed", turningSpeed);
-        Logger.recordOutput(getName() + "/tagId", tagId);
-        Logger.recordOutput(getName() + "/tagPose", tagPose2d.getRotation().getRadians());
-        Logger.recordOutput(getName() + "/robot rotation", swerveSubsystem.getPose().getRotation().getRadians());
+        // Logger.recordOutput(getName() + "/xSpeed", xSpeed);
+        // Logger.recordordOutput(getName() + "/ySpeed", ySpeed);
+        // Logger.recordOutput(getName() + "/xDistance", xDistance);
+        // Logger.recordOutput(getName() + "/yDistance", yDistance);
+        // Logger.recordOutput(getName() + "/turningSpeed", turningSpeed);
+        // Logger.recordOutput(getName() + "/tagId", tagId);
+        // Logger.recordOutput(getName() + "/tagPose", tagPose2d.getRotation().getRadians());
+        // Logger.recordOutput(getName() + "/robot rotation", swerveSubsystem.getPose().getRotation().getRadians());
     }
 
     @Override

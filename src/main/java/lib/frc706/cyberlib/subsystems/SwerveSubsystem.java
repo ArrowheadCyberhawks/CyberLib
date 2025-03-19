@@ -99,7 +99,6 @@ public class SwerveSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // !! MONKEY CODE !!
         for (PhotonCameraWrapper camera : cameras) {
             Optional<EstimatedRobotPose> result = camera.getEstimatedGlobalPose(getPose());
 
@@ -213,7 +212,7 @@ public class SwerveSubsystem extends SubsystemBase {
         //     //     });
         //     // }
         // }
-        Logger.recordOutput(getName() + "/Robot Pose", getPose());
+        // Logger.recordOutput(getName() + "/Robot Pose", getPose());
         if (swerveDrive.getPose() == Pose2d.kZero) {
             poseAlert.set(true);
         } else {
@@ -442,7 +441,7 @@ public class SwerveSubsystem extends SubsystemBase {
         PathPlannerLogging.setLogActivePathCallback((poses) -> {
             // Do whatever you want with the poses here
             swerveDrive.field.getObject("path").setPoses(poses);
-            Logger.recordOutput("Path", poses.toArray(new Pose2d[poses.size()]));
+            // Logger.recordOutput("Path", poses.toArray(new Pose2d[poses.size()]));
         });
     }
 

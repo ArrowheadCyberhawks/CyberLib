@@ -69,9 +69,9 @@ public class ToPointCommand extends Command {
         // Pose2d currentPose = swerveSubsystem.getPose();
         Double[] poseArray = SmartDashboard.getNumberArray("Field/Robot", new Double[] {0.0, 0.0, 0.0});
         Pose2d currentPose = new Pose2d(poseArray[0], poseArray[1], Rotation2d.fromDegrees(poseArray[2]));
-        Logger.recordOutput(getName() + "/xPosition", currentPose.getX());
-        Logger.recordOutput(getName() + "/yPosition", currentPose.getY());
-        Logger.recordOutput(getName() + "/thetaPosition", currentPose.getRotation().getRadians());
+        // Logger.recordOutput(getName() + "/xPosition", currentPose.getX());
+        // Logger.recordOutput(getName() + "/yPosition", currentPose.getY());
+        // Logger.recordOutput(getName() + "/thetaPosition", currentPose.getRotation().getRadians());
         Pose2d targetPose = targetSupplier.get();
         if (targetPose.getX() != xController.getSetpoint()) {
             xController.setSetpoint(targetPose.getX());
@@ -89,22 +89,22 @@ public class ToPointCommand extends Command {
         swerveSubsystem.swerveDrive.driveFieldOriented(speeds);
 
         // more advantagekit stuff
-        Logger.recordOutput(getName() + "/xSetpoint", xController.getSetpoint());
-        Logger.recordOutput(getName() + "/ySetpoint", yController.getSetpoint());
-        Logger.recordOutput(getName() + "/thetaSetpoint", thetaController.getSetpoint());
-        Logger.recordOutput(getName() + "/xSpeed", xSpeed);
-        Logger.recordOutput(getName() + "/ySpeed", ySpeed);
-        Logger.recordOutput(getName() + "/thetaSpeed", thetaSpeed);
-        Logger.recordOutput(getName() + "/xError", xController.getPositionError());
-        Logger.recordOutput(getName() + "/yError", yController.getPositionError());
-        Logger.recordOutput(getName() + "/thetaError", thetaController.getPositionError());
-        Logger.recordOutput(getName() + "/targetPose", targetPose);
-        Logger.recordOutput(getName() + "/currentPose", currentPose);
-        Logger.recordOutput(getName() + "/realXError", targetPose.getX() - currentPose.getX());
-        Logger.recordOutput(getName() + "/realYError", targetPose.getY() - currentPose.getY());
-        // Logger.recordOutput(getName() + "/xGoal", xController.getGoal().position);
-        // Logger.recordOutput(getName() + "/yGoal", yController.getGoal().position);
-        // Logger.recordOutput(getName() + "/thetaGoal", thetaController.getGoal().position);
+        // Logger.recordOutput(getName() + "/xSetpoint", xController.getSetpoint());
+        // Logger.recordOutput(getName() + "/ySetpoint", yController.getSetpoint());
+        // Logger.recordOutput(getName() + "/thetaSetpoint", thetaController.getSetpoint());
+        // Logger.recordordOutput(getName() + "/xSpeed", xSpeed);
+        // Logger.recordOutput(getName() + "/ySpeed", ySpeed);
+        // Logger.recordOutput(getName() + "/thetaSpeed", thetaSpeed);
+        // Logger.recordOutput(getName() + "/xError", xController.getPositionError());
+        // Logger.recordOutput(getName() + "/yError", yController.getPositionError());
+        // Logger.recordOutput(getName() + "/thetaError", thetaController.getPositionError());
+        // Logger.recordOutput(getName() + "/targetPose", targetPose);
+        // Logger.recordOutput(getName() + "/currentPose", currentPose);
+        // Logger.recordOutput(getName() + "/realXError", targetPose.getX() - currentPose.getX());
+        // Logger.recordOutput(getName() + "/realYError", targetPose.getY() - currentPose.getY());
+        // // Logger.recordOutput(getName() + "/xGoal", xController.getGoal().position);
+        // // Logger.recordOutput(getName() + "/yGoal", yController.getGoal().position);
+        // // Logger.recordOutput(getName() + "/thetaGoal", thetaController.getGoal().position);
     }
 
     @Override
