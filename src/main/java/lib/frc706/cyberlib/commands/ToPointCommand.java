@@ -2,109 +2,160 @@ package lib.frc706.cyberlib.commands;
 
 import java.util.function.Supplier;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj2.command.Command;
 import lib.frc706.cyberlib.subsystems.SwerveSubsystem;
+import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
-public class ToPointCommand extends TrackPointCommand {
+public class ToPointCommand extends Command {
     
-    private static PIDController xController, yController;
-    private double desiredDistance;
+    private final SwerveSubsystem swerveSubsystem;
+
+    private PIDController xController, yController, thetaController;
+    private final LoggedNetworkNumber kPDrive = new LoggedNetworkNumber("ToPoint/kPDrive", 7);
+    private final LoggedNetworkNumber kPTheta = new LoggedNetworkNumber("ToPoint/kPTheta", 6);
+
+    private final LoggedNetworkNumber kIDrive = new LoggedNetworkNumber("ToPoint/kIDrive", 0);
+
+    private final LoggedNetworkNumber kDDrive = new LoggedNetworkNumber("ToPoint/kDDrive", 0.05);//0.01
+
+    private final LoggedNetworkNumber kDriveMaxVel = new LoggedNetworkNumber("ToPoint/kDriveMaxVel", 0.5);
+    private final LoggedNetworkNumber kDriveMaxAccel = new LoggedNetworkNumber("ToPoint/kDriveMaxAccel", 1);
+
+    private final LoggedNetworkNumber kThetaMaxVel = new LoggedNetworkNumber("ToPoint/kThetaMaxVel", Math.PI);
+    private final LoggedNetworkNumber kThetaMaxAccel = new LoggedNetworkNumber("ToPoint/kThetaMaxAccel", 2 * Math.PI);
+
+    private final LoggedNetworkNumber kDriveTolerance = new LoggedNetworkNumber("ToPoint/kDriveTolerance", 0.000001);
+    private final LoggedNetworkNumber kThetaTolerance = new LoggedNetworkNumber("ToPoint/kThetaTolerance", 0.01);
+
+    private Supplier<Pose2d> targetSupplier;
 
     /**
      * Command to move the robot to a location on the field using the swerve drive. When this command is done, the front of the robot
      * will be facing directly into the face of the target pose.
      * @param swerveSubsystem the swerve subsystem
-     * @param xController the PID controller for the x axis(revolving around the target)
-     * @param yController the PID controller for the y axis(distance from the target)
+     * @param xController the PID controller for the x axis
+     * @param yController the PID controller for the y axis
      * @param turningController the PID controller for the rotation of the robot (used for angling the robot towards the target)
      * @param targetSupplier supplies the pose we want to move to
-     * @param desiredDistance the distance we want the center of the robot to be from the target. Usually the distance from center to the front face of the robot.
-     * @param maxVel the maximum velocity of the robot in m/s
-     * @param maxAngularVel the maximum angular velocity of the robot in rad/s
      */
-    public ToPointCommand(SwerveSubsystem swerveSubsystem, PIDController xController, PIDController yController, PIDController turningController, Supplier<Pose2d> targetSupplier, double desiredDistance, double maxVel, double maxAngularVel) {
-        /*
-         * everything in an explicit super constructor has to be static
-         * so we have to do stupid hacks like set functions to null then reset them later
-         * this is a terrible way to do it but it works i guess
-         * 
-         * SCREW YOU JAVA
-         * 
-         * -grant
-         * 
-         * what he said was 🔥 fr - nitin
-         * 
-         */
-        super(swerveSubsystem, turningController, targetSupplier, null, null, ()-> 0.0, maxVel, maxAngularVel);
-        super.setXSupplier(() -> {return -calculateXSpeed(swerveSubsystem.getPose(), targetSupplier.get());});
-        super.setYSupplier(() -> {return -calculateYSpeed(swerveSubsystem.getPose(), targetSupplier.get());});
-        ToPointCommand.xController = xController;
-        ToPointCommand.yController = yController;
-        this.desiredDistance = desiredDistance;
-        //monkey ahh code
-    }
+    public ToPointCommand(SwerveSubsystem swerveSubsystem, Supplier<Pose2d> targetSupplier) {
+        this.swerveSubsystem = swerveSubsystem;
+        this.targetSupplier = targetSupplier;
 
-    /**
-     * WARNING: ONLY USE THIS CONSTRUCTOR IF THE OTHER ONE HAS ALREADY BEEN USED AT LEAST ONCE!!!
-     * THE OTHER CONSTRUCTOR SETS STATIC VARIABLES WHICH ARE REQUIRED FOR THIS ONE TO WORK!
-     * 
-     * @param targetSupplier Supplies the pose we want to move to
-     * @param desiredDistance The distance we want the center of the robot to be from the target. Usually the distance from center to the front face of the robot.
-     */
-    public ToPointCommand(Supplier<Pose2d> targetSupplier, double desiredDistance) {
-        super(targetSupplier, null, null); // i hate this so much
-        super.setXSupplier(() -> {return -calculateXSpeed(swerveSubsystem.getPose(), targetSupplier.get());});
-        super.setYSupplier(() -> {return -calculateYSpeed(swerveSubsystem.getPose(), targetSupplier.get());});
-        this.desiredDistance = desiredDistance;
-        if(xController == null) {
-            throw new NullPointerException("xController is null!");
-        } else if(yController == null) {
-            throw new NullPointerException("yController is null!");
-        }
-    }
+        //set up PID controllers
+        xController = new PIDController(kPDrive.get(), kIDrive.get(), kDDrive.get());
+        yController = new PIDController(kPDrive.get(), kIDrive.get(), kDDrive.get());
+        thetaController = new PIDController(kPTheta.get(), 0, 0);
+        xController.setTolerance(kDriveTolerance.get());
+        yController.setTolerance(kDriveTolerance.get());
+        thetaController.setTolerance(kThetaTolerance.get());
 
-    /**
-     * Calculates the horizontal speed of the robot around a circle centered at the target pose 
-     * such that the robot will lie on the line normal to the face of the target
-     * 
-     * @param currentPose current pose of the robot
-     * @param targetPose pose of the apriltag (or whatever else we want to point towards)
-     */
-    private double calculateXSpeed(Pose2d currentPose, Pose2d targetPose) {
-        double thetaError = calculatePolarAngleTo(currentPose, targetPose); // get the distance we need to travel around the circle
-        double xSpeed = xController.calculate(thetaError, 0); // calculate the speed we need to travel with PID
-        xSpeed /= (Math.abs(TrackPointCommand.calculateAngleTo(currentPose, targetPose))+1); // slow down if we're not facing the target
-        return xSpeed;
-    }
+        // advantagekit stuff
 
-    private double calculateYSpeed(Pose2d currentPose, Pose2d targetPose) {
-        double distance = currentPose.getTranslation().getDistance(targetPose.getTranslation()); // get the distance from the target
-        double ySpeed = yController.calculate(distance, desiredDistance); // calculate the speed we need to travel with PID
-        ySpeed /= (Math.abs(TrackPointCommand.calculateAngleTo(currentPose, targetPose))+1); // slow down if we're not facing the target
-        return ySpeed;
-    }
-    /**
-     * Calculates the angle to point the robot towards the target
-     * @param currentPose current pose of the robot
-     * @param targetPose pose of the apriltag (or whatever else we want to point towards)
-     * @return angle between the robot and the vector facing into the front of the target
-     */
-    private static double calculatePolarAngleTo(Pose2d currentPose, Pose2d targetPose) {
-        Rotation2d thetaError = currentPose.getRotation().minus(targetPose.getRotation());
-                        // TODO: ?!?!?!?!?!?!?!?!?!?!??!?!
-        return thetaError.minus(Rotation2d.fromDegrees(69)).getRadians();
-    }
-
-    @Override
-    public void initialize() {
-        
+        addRequirements(swerveSubsystem);
     }
 
     @Override
     public void execute() {
-        super.execute();
+        // updateConstants();
+        // Pose2d currentPose = swerveSubsystem.getPose();
+        Double[] poseArray = SmartDashboard.getNumberArray("Field/Robot", new Double[] {0.0, 0.0, 0.0});
+        Pose2d currentPose = new Pose2d(poseArray[0], poseArray[1], Rotation2d.fromDegrees(poseArray[2]));
+        // Logger.recordOutput(getName() + "/xPosition", currentPose.getX());
+        // Logger.recordOutput(getName() + "/yPosition", currentPose.getY());
+        // Logger.recordOutput(getName() + "/thetaPosition", currentPose.getRotation().getRadians());
+        Pose2d targetPose = targetSupplier.get();
+        if (targetPose.getX() != xController.getSetpoint()) {
+            xController.setSetpoint(targetPose.getX());
+        }
+        if (targetPose.getY() != yController.getSetpoint()) {
+            yController.setSetpoint(targetPose.getY());
+        }
+        if (targetPose.getRotation().getRadians() != thetaController.getSetpoint()) {
+            thetaController.setSetpoint(targetPose.getRotation().getRadians());
+        }
+        double xSpeed = MathUtil.clamp(xController.calculate(currentPose.getX()), -kDriveMaxVel.get(), kDriveMaxVel.get());
+        double ySpeed = MathUtil.clamp(yController.calculate(currentPose.getY()), -kDriveMaxVel.get(), kDriveMaxVel.get());
+        double thetaSpeed = MathUtil.clamp(thetaController.calculate(currentPose.getRotation().getRadians()), -kThetaMaxVel.get(), kThetaMaxVel.get());
+        ChassisSpeeds speeds = new ChassisSpeeds(xSpeed, ySpeed, thetaSpeed);
+        swerveSubsystem.swerveDrive.driveFieldOriented(speeds);
+
+        // more advantagekit stuff
+        // Logger.recordOutput(getName() + "/xSetpoint", xController.getSetpoint());
+        // Logger.recordOutput(getName() + "/ySetpoint", yController.getSetpoint());
+        // Logger.recordOutput(getName() + "/thetaSetpoint", thetaController.getSetpoint());
+        // Logger.recordordOutput(getName() + "/xSpeed", xSpeed);
+        // Logger.recordOutput(getName() + "/ySpeed", ySpeed);
+        // Logger.recordOutput(getName() + "/thetaSpeed", thetaSpeed);
+        // Logger.recordOutput(getName() + "/xError", xController.getPositionError());
+        // Logger.recordOutput(getName() + "/yError", yController.getPositionError());
+        // Logger.recordOutput(getName() + "/thetaError", thetaController.getPositionError());
+        // Logger.recordOutput(getName() + "/targetPose", targetPose);
+        // Logger.recordOutput(getName() + "/currentPose", currentPose);
+        // Logger.recordOutput(getName() + "/realXError", targetPose.getX() - currentPose.getX());
+        // Logger.recordOutput(getName() + "/realYError", targetPose.getY() - currentPose.getY());
+        // // Logger.recordOutput(getName() + "/xGoal", xController.getGoal().position);
+        // // Logger.recordOutput(getName() + "/yGoal", yController.getGoal().position);
+        // // Logger.recordOutput(getName() + "/thetaGoal", thetaController.getGoal().position);
+    }
+
+    @Override
+    public void initialize() {
+        // xController = new PIDController(kPDrive.get(), kIDrive.get(), kDDrive.get(), new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
+        // yController = new PIDController(kPDrive.get(), kIDrive.get(), kDDrive.get(), new Constraints(kDriveMaxVel.get(), kDriveMaxAccel.get()));
+        // thetaController = new PIDController(kPTheta.get(), 0, 0, new Constraints(kThetaMaxVel.get(), kThetaMaxAccel.get()));
+        xController.setTolerance(kDriveTolerance.get());
+        yController.setTolerance(kDriveTolerance.get());
+        thetaController.setTolerance(kThetaTolerance.get());
+        xController.setSetpoint(targetSupplier.get().getX());
+        yController.setSetpoint(targetSupplier.get().getY());
+        thetaController.setSetpoint(targetSupplier.get().getRotation().getRadians());
+        xController.reset();
+        yController.reset();
+        thetaController.reset();
+        if (targetSupplier == null) {
+           return;
+        }
+    }
+
+    /**
+     * Checks if any networktables inputs have changed and updates the PID controllers accordingly.
+     */
+    private void updateConstants() {
+            // absolute unit of an if statement
+        if (xController.getP() != kPDrive.get() ||
+            yController.getP() != kPDrive.get() ||
+            xController.getI() != kIDrive.get() ||
+            yController.getI() != kIDrive.get() ||
+            xController.getD() != kDDrive.get() ||
+            yController.getD() != kDDrive.get() ||
+            thetaController.getP() != kPTheta.get() || 
+            xController.getPositionTolerance() != kDriveTolerance.get() || 
+            yController.getPositionTolerance() != kDriveTolerance.get() || 
+            thetaController.getPositionTolerance() != kThetaTolerance.get()) {
+
+            xController.setP(kPDrive.get());
+            yController.setP(kPDrive.get());
+            thetaController.setP(kPTheta.get());
+
+            xController.setI(kIDrive.get());
+            yController.setI(kIDrive.get());
+
+            xController.setD(kDDrive.get());
+            yController.setD(kDDrive.get());
+
+            xController.setTolerance(kDriveTolerance.get());
+            yController.setTolerance(kDriveTolerance.get());
+            thetaController.setTolerance(kThetaTolerance.get());
+        }
     }
 
     @Override
@@ -115,6 +166,6 @@ public class ToPointCommand extends TrackPointCommand {
     @Override
     public boolean isFinished() {
         //robot needs to kill itself at some point
-        return swerveSubsystem.getPose().getTranslation().getDistance(targetSupplier.get().getTranslation()) < desiredDistance + 0.05;
+        return xController.atSetpoint() && yController.atSetpoint() && thetaController.atSetpoint();
     }
 }

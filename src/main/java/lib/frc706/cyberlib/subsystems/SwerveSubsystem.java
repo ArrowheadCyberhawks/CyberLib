@@ -46,6 +46,7 @@ public class SwerveSubsystem extends SubsystemBase {
     private RobotConfig config;
     private PIDConstants translationConstants, thetaConstants; //this is only here because YAGSL won't give us the one from the JSON file
     private Alert poseAlert = new Alert(getName(), "No robot pose!", AlertType.kWarning);
+    private final int[] reefTagIDs = {6,7,8,9,10,11,17,18,19,20,21,22};
     
 
     private static double headingOffset = 0; // Difference between actual robot angle and angle of forward driving
@@ -98,17 +99,41 @@ public class SwerveSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // !! MONKEY CODE !!
         for (PhotonCameraWrapper camera : cameras) {
             Optional<EstimatedRobotPose> result = camera.getEstimatedGlobalPose(getPose());
+
             if (result.isPresent() && Math.abs(getRobotRelativeSpeeds().omegaRadiansPerSecond) < 4 * Math.PI) { 
+                // TODO: REMOVE THIS EXTREMELY ROBOT SPECIFIC CODE!!!
+
+                // treat cam0 differently because its only purpose is to see the reef extremely accurately
+                if(camera.photonCamera.getName().equals("cam0")) {
+                    boolean seeingReefTag = false;
+                    // check if we see a reef tag
+                    for (var target : result.get().targetsUsed) {
+                        for (int id : reefTagIDs) {
+                            // break if we see any reef tag
+                            if (target.getFiducialId() == id) {
+                                seeingReefTag = true;
+                                break;
+                            }
+                        }
+                    }
+                    //if we do see a reef tag, trust that tag completely and ignore all other vision measurements
+                    if (seeingReefTag) {
+                        swerveDrive.addVisionMeasurement(result.get().estimatedPose.toPose2d(), result.get().timestampSeconds);
+                        break; //ignore other vision measurements
+                    }
+                }
+
                 double minDistance = Double.MAX_VALUE;
+
                 for (var target : result.get().targetsUsed) {
                     double distance = target.getBestCameraToTarget().getTranslation().getDistance(new Translation3d());
                     if (distance < minDistance) {
                         minDistance = distance;
                     }
                 }
+
                 minDistance *= 3;
                 swerveDrive.addVisionMeasurement(result.get().estimatedPose.toPose2d(), result.get().timestampSeconds,
                 VecBuilder.fill(minDistance, minDistance, minDistance));
@@ -187,7 +212,7 @@ public class SwerveSubsystem extends SubsystemBase {
         //     //     });
         //     // }
         // }
-        Logger.recordOutput(getName() + "/Robot Pose", getPose());
+        // Logger.recordOutput(getName() + "/Robot Pose", getPose());
         if (swerveDrive.getPose() == Pose2d.kZero) {
             poseAlert.set(true);
         } else {
@@ -416,7 +441,7 @@ public class SwerveSubsystem extends SubsystemBase {
         PathPlannerLogging.setLogActivePathCallback((poses) -> {
             // Do whatever you want with the poses here
             swerveDrive.field.getObject("path").setPoses(poses);
-            Logger.recordOutput("Path", poses.toArray(new Pose2d[poses.size()]));
+            // Logger.recordOutput("Path", poses.toArray(new Pose2d[poses.size()]));
         });
     }
 
