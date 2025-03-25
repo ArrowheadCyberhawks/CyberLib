@@ -1,4 +1,4 @@
-package lib.frc706.cyberlib.commands;
+package lib.frc706.cyberlib.commands.controller;
 
 import lib.frc706.cyberlib.XboxControllerWrapper;
 import lib.frc706.cyberlib.subsystems.SwerveSubsystem;

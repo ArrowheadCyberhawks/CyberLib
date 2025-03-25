@@ -122,8 +122,8 @@ public class TrackPointCommand extends Command {
             ySpeed = yInput * maxVel;
             
         } else {
-            xSpeed = MathUtil.clamp(xInput, -maxVel, maxVel);
-            ySpeed = MathUtil.clamp(yInput, -maxVel, maxVel);
+            xSpeed = MathUtil.clamp(xInput * accelMultiplier, -maxVel, maxVel);
+            ySpeed = MathUtil.clamp(yInput * accelMultiplier, -maxVel, maxVel);
         }
 
         // MONKEY CODE (made by our fellow monkey)
