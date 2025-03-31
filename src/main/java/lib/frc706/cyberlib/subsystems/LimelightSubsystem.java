@@ -90,7 +90,7 @@ public class LimelightSubsystem extends SubsystemBase {
                 }
                 if (!doRejectUpdate) {
                     swerveSubsystem.swerveDrive.swerveDrivePoseEstimator
-                            .setVisionMeasurementStdDevs(VecBuilder.fill(1, 1, 1));
+                            .setVisionMeasurementStdDevs(VecBuilder.fill(1, 1, 9999));
                     swerveSubsystem.swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(
                             mt2.pose,
                             mt2.timestampSeconds);
