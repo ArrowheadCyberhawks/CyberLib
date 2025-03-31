@@ -53,6 +53,7 @@ public class PhotonCameraWrapper {
 		try {
 			// Attempt to load the AprilTagFieldLayout that will tell us where the tags are
 			// on the field.
+			//TODO don't use JSON files and instead use Pose2d objects
 			AprilTagFieldLayout fieldLayout = new AprilTagFieldLayout(Filesystem.getDeployDirectory().toPath().resolve(Path.of("2025-reefscape-welded-nobarge.json"))); //TODO: REMOVE season-specific garbage
 			// Create pose estimator
 			photonPoseEstimator = new PhotonPoseEstimator(fieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, robotToCam);
