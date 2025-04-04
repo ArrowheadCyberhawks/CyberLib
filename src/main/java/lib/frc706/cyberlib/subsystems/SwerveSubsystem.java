@@ -389,7 +389,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
     /**
      * Drive the robot given a chassis field oriented velocity.
-     *
+     * ONLY USE FOR MANUAL DRIVE
      * @param velocity Velocity according to the robot.
      */
     public void driveFieldOriented(ChassisSpeeds velocity) {
