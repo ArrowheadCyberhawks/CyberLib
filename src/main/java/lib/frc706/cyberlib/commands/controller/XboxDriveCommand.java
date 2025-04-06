@@ -31,7 +31,7 @@ public class XboxDriveCommand extends Command{
 	public void execute() {
 		double xInput = controller.getLeftY(); //invert because up is negative for some reason
 		double yInput = controller.getLeftX(); //invert because FOC left is +y, controller right is +y
-		double rotInput = controller.getRightX(); //invert because FOC CCW is +rot, controller right is +
+		double rotInput = controller.getRightX()*1.5; //invert because FOC CCW is +rot, controller right is +
 		// double accelMultiplier = controller.getRightTriggerAxis();
 		// xInput = MathUtil.applyDeadband(xInput, kDeadband);
         // yInput = MathUtil.applyDeadband(yInput, kDeadband);
