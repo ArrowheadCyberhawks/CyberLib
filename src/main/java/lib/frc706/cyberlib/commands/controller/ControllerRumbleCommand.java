@@ -9,7 +9,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 public class ControllerRumbleCommand extends Command {
     private XboxController controller;
     private BooleanSupplier condition;
-    private double time;
     private double power;
 
     public ControllerRumbleCommand(XboxController controller, BooleanSupplier condition, double power) {
@@ -18,9 +17,8 @@ public class ControllerRumbleCommand extends Command {
         this.power = power;
     }
 
-    public ControllerRumbleCommand(XboxController controller, double time, double power) {
+    public ControllerRumbleCommand(XboxController controller, double power) {
         this.controller = controller;
-        this.time = time;
         this.power = power;
     }
 

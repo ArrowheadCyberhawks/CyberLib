@@ -37,7 +37,6 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import swervelib.SwerveDrive;
 import swervelib.parser.SwerveParser;
-import org.littletonrobotics.junction.Logger;
 
 public class SwerveSubsystem extends SubsystemBase {
     public final SwerveDrive swerveDrive;

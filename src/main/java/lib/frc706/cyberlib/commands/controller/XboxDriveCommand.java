@@ -11,7 +11,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 public class XboxDriveCommand extends Command{
 	private final XboxControllerWrapper controller;
 	private final SwerveSubsystem swerveSubsystem;
-	private double kMaxVelTele, kDeadband, kMaxAngularVelTele;
+	private double kMaxVelTele, kMaxAngularVelTele;
     private final SlewRateLimiter xLimiter, yLimiter, turnLimiter;
 	private final Supplier<Boolean> fieldSupplier;
 	public XboxDriveCommand(XboxControllerWrapper controller, SwerveSubsystem swerveSubsystem, Supplier<Boolean> fieldOriented, double kDeadband, double kMaxVelTele, double kMaxAccelTele, double kMaxAngularVelTele, double kMaxAngularAccelTele) {
@@ -21,7 +21,6 @@ public class XboxDriveCommand extends Command{
         this.xLimiter = new SlewRateLimiter(kMaxAccelTele);
         this.yLimiter = new SlewRateLimiter(kMaxAccelTele);
         this.turnLimiter = new SlewRateLimiter(kMaxAngularAccelTele);
-		this.kDeadband = kDeadband;
 		this.kMaxVelTele = kMaxVelTele;
 		this.kMaxAngularVelTele = kMaxAngularVelTele;
 		addRequirements(swerveSubsystem);
