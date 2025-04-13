@@ -3,7 +3,7 @@ package lib.frc706.cyberlib.commands;
 import java.util.function.Supplier;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -15,7 +15,7 @@ import lib.frc706.cyberlib.subsystems.SwerveSubsystem;
 public class TrackPointCommand extends Command {
 
     protected static SwerveSubsystem swerveSubsystem;
-    private static PIDController m_turningController;
+    private static ProfiledPIDController m_turningController;
     private static double maxVel = Double.MIN_VALUE;
     private static double maxAngularVel = Double.MIN_VALUE;
 
@@ -23,7 +23,7 @@ public class TrackPointCommand extends Command {
     protected Supplier<Pose2d> targetSupplier;
     private final boolean controllerCorrections;
 
-    public TrackPointCommand(SwerveSubsystem swerveSubsystem, PIDController turningController, Supplier<Pose2d> targetSupplier,
+    public TrackPointCommand(SwerveSubsystem swerveSubsystem, ProfiledPIDController turningController, Supplier<Pose2d> targetSupplier,
         Supplier<Double> xSpdFunction, Supplier<Double> ySpdFunction, Supplier<Double> accelFunction, double maxVel, double maxAngularVel) {
         TrackPointCommand.swerveSubsystem = swerveSubsystem;
         this.targetSupplier = targetSupplier;
@@ -37,7 +37,7 @@ public class TrackPointCommand extends Command {
         addRequirements(swerveSubsystem);
     }
 
-    public TrackPointCommand(SwerveSubsystem swerveSubsystem, PIDController turningController, Supplier<Pose2d> targetSupplier,
+    public TrackPointCommand(SwerveSubsystem swerveSubsystem, ProfiledPIDController turningController, Supplier<Pose2d> targetSupplier,
         Supplier<Double> xSpdFunction, Supplier<Double> ySpdFunction, double maxVel, double maxAngularVel) {
         TrackPointCommand.swerveSubsystem = swerveSubsystem;
         this.targetSupplier = targetSupplier;
