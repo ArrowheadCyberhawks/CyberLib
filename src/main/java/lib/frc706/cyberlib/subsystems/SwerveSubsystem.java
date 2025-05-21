@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.function.DoubleSupplier;
 
+import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.ModuleConfig;
@@ -211,7 +212,7 @@ public class SwerveSubsystem extends SubsystemBase {
         //     //     });
         //     // }
         // }
-        // Logger.recordOutput(getName() + "/Robot Pose", getPose());
+        Logger.recordOutput(getName() + "/Robot Pose", getPose());
         if (swerveDrive.getPose() == Pose2d.kZero) {
             poseAlert.set(true);
         } else {
